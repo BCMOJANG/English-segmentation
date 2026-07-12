@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>听力分割工具</title>
+<title>音频分割工具</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
 <style>
 :root {
@@ -59,9 +59,9 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 24px; margin-bottom: 20px; border: 1px solid var(--border);
   transition: background .3s, border-color .3s;
+  animation: fadeUp .35s ease-out both;
 }
 
-/* Upload */
 .upload-zone {
   border: 2px dashed var(--border); border-radius: var(--radius); padding: 48px 24px;
   text-align: center; cursor: pointer; transition: .25s; background: var(--surface2);
@@ -76,15 +76,13 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 
 .file-info { display: none; margin-top: 16px; padding: 12px 16px; background: var(--surface2);
   border-radius: var(--radius-sm); align-items: center; gap: 12px; }
-.file-info.show { display: flex; }
+.file-info.show { display: flex; animation: fadeUp .3s ease-out both; }
 .file-info .name { flex: 1; font-weight: 500; word-break: break-all; }
 .file-info .size, .file-info .duration { font-size: .85rem; color: var(--text2); white-space: nowrap; }
 .file-info .remove-btn { background: none; border: none; color: var(--danger); cursor: pointer;
   font-size: 1.2rem; padding: 4px; line-height: 1; }
 
-/* Parameters */
 .params-grid { display: grid; gap: 20px; }
-.param { }
 .param-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
 .param-header label { font-weight: 500; font-size: .9rem; }
 .param-header .value { font-size: .85rem; color: var(--primary); font-weight: 600;
@@ -106,7 +104,14 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 }
 .param-desc { font-size: .78rem; color: var(--text2); margin-top: 4px; }
 
-/* Controls */
+.param select {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); font-size: .9rem; cursor: pointer;
+  transition: border-color .2s; outline: none;
+}
+.param select:hover, .param select:focus { border-color: var(--primary); }
+
 .controls { display: flex; gap: 12px; flex-wrap: wrap; }
 .btn {
   padding: 12px 28px; border: none; border-radius: var(--radius-sm); font-size: 1rem;
@@ -123,9 +128,8 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .btn-success { background: var(--success); color: #fff; }
 .btn-success:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
 
-/* Progress */
 .progress-section { display: none; }
-.progress-section.show { display: block; }
+.progress-section.show { display: block; animation: fadeUp .35s ease-out both; }
 .progress-bar-wrap {
   width: 100%; height: 8px; background: var(--border); border-radius: 4px;
   overflow: hidden; margin-bottom: 12px;
@@ -133,22 +137,27 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .progress-bar-fill {
   height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--success));
   border-radius: 4px; transition: width .3s;
+  background-size: 200% 100%;
 }
+.progress-bar-fill.active { animation: shimmer 1.5s linear infinite; }
 .status-text { font-size: .9rem; color: var(--text2); margin-bottom: 8px; }
+.status-text.pulse { animation: pulse 1.5s ease-in-out infinite; }
 .log-box {
   background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 14px;
   max-height: 80px; overflow-y: auto; font-size: .82rem; font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
   line-height: 1.5; color: var(--text2);
 }
-.log-box .log-entry { opacity: 0; animation: fadeIn .3s forwards; }
-@keyframes fadeIn { to { opacity: 1; } }
+.log-box .log-entry { animation: fadeIn .3s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes pulse { 50% { opacity: .6; } }
 .log-box .log-warn { color: #ff9500; }
 .log-box .log-error { color: var(--danger); }
 .log-box .log-success { color: var(--success); }
 
-/* Results */
 .results-section { display: none; }
-.results-section.show { display: block; }
+.results-section.show { display: block; animation: fadeUp .35s ease-out both; }
 .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
 .results-header h2 { font-size: 1.15rem; }
 .results-summary { font-size: .85rem; color: var(--text2); }
@@ -156,7 +165,18 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   display: flex; gap: 8px 16px; padding: 16px; background: var(--surface2);
   border-radius: var(--radius-sm); margin-bottom: 10px; align-items: center;
   transition: .2s; border: 1px solid transparent; flex-wrap: wrap;
+  animation: fadeUp .4s ease-out both;
 }
+.result-card:nth-child(1) { animation-delay: 0s; }
+.result-card:nth-child(2) { animation-delay: .05s; }
+.result-card:nth-child(3) { animation-delay: .1s; }
+.result-card:nth-child(4) { animation-delay: .15s; }
+.result-card:nth-child(5) { animation-delay: .2s; }
+.result-card:nth-child(6) { animation-delay: .25s; }
+.result-card:nth-child(7) { animation-delay: .3s; }
+.result-card:nth-child(8) { animation-delay: .35s; }
+.result-card:nth-child(9) { animation-delay: .4s; }
+.result-card:nth-child(n+10) { animation-delay: .45s; }
 .result-card:hover { border-color: var(--border); }
 .result-card .index {
   width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
@@ -170,44 +190,51 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .result-card .actions button {
   width: 36px; height: 36px; border: none; border-radius: 50%; cursor: pointer;
   display: flex; align-items: center; justify-content: center; font-size: 1rem;
-  transition: .2s; background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  transition: .15s; background: var(--surface); border: 1px solid var(--border); color: var(--text);
 }
-.result-card .actions button:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.result-card .actions button:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.08); }
+.result-card .actions button:active { transform: scale(.92); }
 .result-card .actions button.play-btn.playing { background: var(--danger); color: #fff; border-color: var(--danger); }
+.result-card .actions button.play-btn.playing:hover { transform: scale(1.08); }
 .result-card .actions button:disabled { opacity: .3; cursor: default; }
 
-/* Waveform canvas */
 .result-card .waveform-wrap { width: 120px; height: 36px; flex-shrink: 0; }
 .result-card .waveform-wrap canvas { width: 100%; height: 100%; border-radius: 4px; display: block; }
 
-/* Playback progress bar */
 .prog-row { display: flex; align-items: center; gap: 8px; width: 100%; order: 10; margin-top: 2px; }
-.prog-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; cursor: pointer; position: relative; min-width: 60px; }
+.prog-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; position: relative; min-width: 60px; }
 .prog-bar .prog-fill { height: 100%; background: var(--primary); border-radius: 3px; width: 0%; pointer-events: none; }
 .prog-time { font-size: .72rem; color: var(--text2); font-variant-numeric: tabular-nums; min-width: 30px; }
 .prog-cur { text-align: right; }
 .prog-total { text-align: left; }
 
-.download-all-wrap { margin-top: 16px; text-align: center; }
+.download-all-wrap { margin-top: 16px; text-align: center; animation: fadeUp .4s ease-out .5s both; }
 
-/* Footer */
 .footer { display: flex; justify-content: center; gap: 20px; padding: 24px 0 16px; border-top: 1px solid var(--border); margin-top: 8px; }
 .footer a { color: var(--text2); transition: color .2s; display: flex; align-items: center; }
 .footer a:hover { color: var(--text); }
 
-/* Hidden */
-.hidden { display: none !important; }
-
-/* Left-right layout */
 .main-row { display: flex; flex-direction: column; gap: 20px; }
 @media (min-width: 768px) {
   .main-row { flex-direction: row; align-items: flex-start; }
-  .main-row > .col-left,
-  .main-row > .col-right { flex: 1; min-width: 0; }
+  .main-row > .col-left, .main-row > .col-right { flex: 1; min-width: 0; }
 }
 .main-row + .progress-section { margin-top: 0; }
 
-/* Responsive */
+
+
+::view-transition-old(root) { animation: none; z-index: 1; }
+::view-transition-new(root) {
+  animation: circle-in .45s ease-out both;
+  z-index: 2;
+}
+@keyframes circle-in {
+  from { clip-path: circle(0% at var(--click-x, 50%) var(--click-y, 50%)); }
+  to { clip-path: circle(150% at var(--click-x, 50%) var(--click-y, 50%)); }
+}
+
+.hidden { display: none !important; }
+
 @media (max-width: 640px) {
   .container { padding: 16px 12px 40px; }
   .card { padding: 16px; }
@@ -221,678 +248,536 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 </head>
 <body>
 
-  <div class="container">
-  <header>
-    <h1>音频分割</h1>
-    <button class="theme-btn" onclick="toggleTheme()" title="切换主题" id="themeBtn">☀️</button>
-  </header>
+<div class="container">
+<header>
+  <h1>音频分割</h1>
+  <button class="theme-btn" id="themeBtn" title="切换主题">☀️</button>
+</header>
 
-  <div class="main-row">
-    <div class="col-left">
-      <!-- Upload -->
-      <div class="card">
-        <div class="upload-zone" id="uploadZone">
-          <div class="icon">🎵</div>
-          <div class="text">点击或拖拽音频文件到此处</div>
-          <div class="hint">支持 MP3 · WAV · OGG · FLAC · M4A</div>
-          <input type="file" id="fileInput" accept="audio/*">
-        </div>
-        <div class="file-info" id="fileInfo">
-          <span class="name" id="fileName"></span>
-          <span class="size" id="fileSize"></span>
-          <span class="duration" id="fileDuration"></span>
-          <button class="remove-btn" onclick="removeFile()" title="移除文件">&times;</button>
-        </div>
+<div class="main-row">
+  <div class="col-left">
+    <div class="card">
+      <div class="upload-zone" id="uploadZone">
+        <div class="icon">🎵</div>
+        <div class="text">点击或拖拽音频文件到此处</div>
+        <div class="hint">支持 MP3 · WAV · OGG · FLAC · M4A</div>
+        <input type="file" id="fileInput" accept="audio/*">
       </div>
-    </div>
-    <div class="col-right">
-      <!-- Parameters -->
-      <div class="card hidden" id="paramsCard">
-        <div class="params-grid">
-          <div class="param">
-            <div class="param-header">
-              <label for="minSilence">最小静音长度</label>
-              <span class="value" id="minSilenceVal">3000 ms</span>
-            </div>
-            <input type="range" id="minSilence" min="200" max="5000" value="3000" step="100">
-            <div class="param-desc">静音持续超过此长度才视为分割点</div>
-          </div>
-          <div class="param">
-            <div class="param-header">
-              <label for="silenceThresh">静音阈值</label>
-              <span class="value" id="silenceThreshVal">-40 dB</span>
-            </div>
-            <input type="range" id="silenceThresh" min="-70" max="-10" value="-40" step="1">
-            <div class="param-desc">低于此音量的音频视为静音（数值越低越严格）</div>
-          </div>
-          <div class="param">
-            <div class="param-header">
-              <label for="keepSilence">保留静音</label>
-              <span class="value" id="keepSilenceVal">200 ms</span>
-            </div>
-            <input type="range" id="keepSilence" min="0" max="500" value="200" step="10">
-            <div class="param-desc">每个片段前后保留的静音量，让过渡更自然</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Controls -->
-      <div class="card hidden" id="controlsCard">
-        <div class="controls">
-          <button class="btn btn-primary" id="startBtn" onclick="startProcessing()">▶ 开始分割</button>
-          <button class="btn btn-danger" id="cancelBtn" onclick="cancelProcessing()" disabled>■ 取消</button>
-        </div>
+      <div class="file-info" id="fileInfo">
+        <span class="name" id="fileName"></span>
+        <span class="size" id="fileSize"></span>
+        <span class="duration" id="fileDuration"></span>
+        <button class="remove-btn" id="removeBtn" title="移除文件">&times;</button>
       </div>
     </div>
   </div>
-
-  <!-- Progress -->
-  <div class="card progress-section" id="progressSection">
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progressFill"></div>
-    </div>
-    <div class="status-text" id="statusText">准备就绪</div>
-    <div class="log-box" id="logBox"></div>
-  </div>
-
-  <!-- Results -->
-  <div class="card results-section" id="resultsSection">
-    <div class="results-header">
-      <div>
-        <h2>分割结果</h2>
-        <div class="results-summary" id="resultsSummary"></div>
+  <div class="col-right">
+    <div class="card hidden" id="paramsCard">
+      <div class="params-grid">
+        <div class="param">
+          <div class="param-header">
+            <label for="minSilence">最小静音长度</label>
+            <span class="value" id="minSilenceVal">3000 ms</span>
+          </div>
+          <input type="range" id="minSilence" min="200" max="5000" value="3000" step="100">
+        </div>
+        <div class="param">
+          <div class="param-header">
+            <label for="silenceThresh">静音阈值</label>
+            <span class="value" id="silenceThreshVal">-40 dB</span>
+          </div>
+          <input type="range" id="silenceThresh" min="-70" max="-10" value="-40" step="1">
+        </div>
+        <div class="param">
+          <div class="param-header">
+            <label for="keepSilence">保留静音</label>
+            <span class="value" id="keepSilenceVal">200 ms</span>
+          </div>
+          <input type="range" id="keepSilence" min="0" max="500" value="200" step="10">
+        </div>
+        <div class="param">
+          <div class="param-header">
+            <label for="formatSelect">输出格式</label>
+          </div>
+          <select id="formatSelect">
+            <option value="wav">WAV（无损）</option>
+            <option value="mp3">MP3（高压缩）</option>
+          </select>
+          <div class="param-desc">MP3 需要联网首次加载编码库</div>
+        </div>
       </div>
     </div>
-    <div id="resultsList"></div>
-    <div class="download-all-wrap" id="downloadAllWrap">
-      <button class="btn btn-success" onclick="downloadAll()">📦 下载全部 (ZIP)</button>
+
+    <div class="card hidden" id="controlsCard">
+      <div class="controls">
+        <button class="btn btn-primary" id="startBtn">▶ 开始分割</button>
+        <button class="btn btn-danger" id="cancelBtn" disabled>■ 取消</button>
+      </div>
     </div>
   </div>
+</div>
 
-  <footer class="footer">
-    <a href="https://github.com/BCMOJANG/English-segmentation" target="_blank" rel="noopener" aria-label="GitHub">
-      <svg viewBox="0 0 16 16" height="20" width="20" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-    </a>
-    <a href="https://space.bilibili.com/1248933612" target="_blank" rel="noopener" aria-label="Bilibili">
-      <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M7.172 2.757 10.414 6h3.171l3.243-3.242a1 1 0 011.415 1.415L16.414 6H18.5A3.5 3.5 0 0122 9.5v8a3.5 3.5 0 01-3.5 3.5h-13A3.5 3.5 0 012 17.5v-8A3.5 3.5 0 015.5 6h2.085L5.757 4.171a1 1 0 011.415-1.415zM18.5 8h-13a1.5 1.5 0 00-1.493 1.356L4 9.5v8a1.5 1.5 0 001.356 1.493L5.5 19h13a1.5 1.5 0 001.493-1.356L20 17.5v-8A1.5 1.5 0 0018.5 8zM8 11a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1zm8 0a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1z"/></svg>
-    </a>
-    <a href="https://qm.qq.com/q/ETSZROcsVy" target="_blank" rel="noopener" aria-label="QQ">
-      <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M19.913 14.529a31.977 31.977 0 00-.675-1.886l-.91-2.246c0-.026.012-.468.012-.696C18.34 5.86 16.507 2 12 2S5.66 5.86 5.66 9.7c0 .229.011.671.012.697l-.91 2.246a32.777 32.777 0 00-.675 1.886c-.86 2.737-.581 3.87-.369 3.895.455.054 1.771-2.06 1.771-2.06 0 1.224.637 2.822 2.016 3.976-.515.157-1.147.399-1.554.695-.365.267-.319.54-.253.65.289.481 4.955.307 6.303.157 1.347.15 6.014.324 6.302-.158.066-.11.112-.382-.253-.649-.407-.296-1.039-.538-1.555-.696 1.379-1.153 2.016-2.751 2.016-3.976 0 0 1.316 2.115 1.771 2.06.212-.025.49-1.157-.37-3.894"/></svg>
-    </a>
-  </footer>
+<div class="card progress-section" id="progressSection">
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill"></div>
+  </div>
+  <div class="status-text" id="statusText">准备就绪</div>
+  <div class="log-box" id="logBox"></div>
+</div>
+
+<div class="card results-section" id="resultsSection">
+  <div class="results-header">
+    <div>
+      <h2>分割结果</h2>
+      <div class="results-summary" id="resultsSummary"></div>
+    </div>
+  </div>
+  <div id="resultsList"></div>
+  <div class="download-all-wrap" id="downloadAllWrap">
+    <button class="btn btn-success" id="downloadAllBtn">📦 下载全部 (ZIP)</button>
+  </div>
+</div>
+
+<footer class="footer">
+  <a href="https://github.com/BCMOJANG/English-segmentation" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" height="20" width="20" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  </a>
+  <a href="https://space.bilibili.com/1248933612" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M7.172 2.757 10.414 6h3.171l3.243-3.242a1 1 0 011.415 1.415L16.414 6H18.5A3.5 3.5 0 0122 9.5v8a3.5 3.5 0 01-3.5 3.5h-13A3.5 3.5 0 012 17.5v-8A3.5 3.5 0 015.5 6h2.085L5.757 4.171a1 1 0 011.415-1.415zM18.5 8h-13a1.5 1.5 0 00-1.493 1.356L4 9.5v8a1.5 1.5 0 001.356 1.493L5.5 19h13a1.5 1.5 0 001.493-1.356L20 17.5v-8A1.5 1.5 0 0018.5 8zM8 11a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1zm8 0a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1z"/></svg>
+  </a>
+  <a href="https://qm.qq.com/q/ETSZROcsVy" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M19.913 14.529a31.977 31.977 0 00-.675-1.886l-.91-2.246c0-.026.012-.468.012-.696C18.34 5.86 16.507 2 12 2S5.66 5.86 5.66 9.7c0 .229.011.671.012.697l-.91 2.246a32.777 32.777 0 00-.675 1.886c-.86 2.737-.581 3.87-.369 3.895.455.054 1.771-2.06 1.771-2.06 0 1.224.637 2.822 2.016 3.976-.515.157-1.147.399-1.554.695-.365.267-.319.54-.253.65.289.481 4.955.307 6.303.157 1.347.15 6.014.324 6.302-.158.066-.11.112-.382-.253-.649-.407-.296-1.039-.538-1.555-.696 1.379-1.153 2.016-2.751 2.016-3.976 0 0 1.316 2.115 1.771 2.06.212-.025.49-1.157-.37-3.894"/></svg>
+  </a>
+</footer>
 
 </div>
 
 <script>
-// ========================================================================
-//  音频处理引擎
-// ========================================================================
+// =========================================================================
+//  Inline Web Worker - audio processing engine
+// =========================================================================
+var WORKER_CODE = [
+'// Check MP3 availability',
+'var hasMP3=false;',
+'try{importScripts("https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js");hasMP3=typeof lamejs!=="undefined"}catch(e){}',
+'var cancelled=false;',
+'function pt(t,d){self.postMessage(Object.assign({type:t},d))}',
+'function a2dB(v){return 20*Math.log10(Math.max(v,1e-15))}',
+'function encWAV(samples,sampleRate){',
+'var len=samples.length,byteLen=len*2,buf=new ArrayBuffer(44+byteLen),v=new DataView(buf);',
+'function ws(o,s){for(var i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))}',
+'ws(0,"RIFF");v.setUint32(4,36+byteLen,true);ws(8,"WAVE");ws(12,"fmt ");',
+'v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);',
+'v.setUint32(24,sampleRate,true);v.setUint32(28,sampleRate*2,true);',
+'v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,"data");v.setUint32(40,byteLen,true);',
+'var i16=new Int16Array(buf,44,len);',
+'for(var i=0;i<len;i++){var s=Math.max(-1,Math.min(1,samples[i]));i16[i]=s<0?s*32768:s*32767;if((i&0x3fff)===0&&cancelled)return null}',
+'return buf}',
+'function encMP3(samples,sampleRate){',
+'if(!hasMP3)return null;',
+'var mp3enc=new lamejs.Mp3Encoder(1,sampleRate,128),bs=1152,parts=[],pos=0,rem=samples.length;',
+'while(rem>0){var c=Math.min(bs,rem),ch=samples.subarray(pos,pos+c),b=mp3enc.encodeBuffer(ch);if(b.length)parts.push(b);pos+=c;rem-=c;if((pos&0x3fff)===0&&cancelled)return null}',
+'var last=mp3enc.flush();if(last.length)parts.push(last);',
+'var tl=parts.reduce(function(s,b){return s+b.length},0),r=new Uint8Array(tl),o=0;',
+'for(var i=0;i<parts.length;i++){r.set(parts[i],o);o+=parts[i].length}',
+'return r.buffer}',
+'var crcT;(function(){crcT=new Uint32Array(256);for(var i=0;i<256;i++){var c=i;for(var j=0;j<8;j++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcT[i]=c}})();',
+'function crc32(d){var c=0xffffffff;for(var i=0;i<d.length;i++)c=crcT[(c^d[i])&0xff]^(c>>>8);return(c^0xffffffff)>>>0}',
+'function mkZIP(files){',
+'var parts=[],offset=0,central=[],enc=new TextEncoder();',
+'for(var fi=0;fi<files.length;fi++){',
+'var f=files[fi],nb=enc.encode(f.name),raw=new Uint8Array(f.data),crc=crc32(raw),sz=raw.length;',
+'var h=new ArrayBuffer(30+nb.length),v=new DataView(h);',
+'v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint16(6,0x0800,true);',
+'v.setUint16(8,0,true);v.setUint16(10,0,true);v.setUint16(12,0,true);',
+'v.setUint32(14,crc,true);v.setUint32(18,sz,true);v.setUint32(22,sz,true);',
+'v.setUint16(26,nb.length,true);v.setUint16(28,0,true);',
+'for(var i=0;i<nb.length;i++)v.setUint8(30+i,nb[i]);',
+'parts.push(h,raw);central.push({nb:nb,crc:crc,sz:sz,off:offset});offset+=h.byteLength+sz}',
+'var cdS=central.reduce(function(s,e){return s+46+e.nb.length},0),cdB=new ArrayBuffer(cdS),cd=new DataView(cdB),cdP=0;',
+'for(var i=0;i<central.length;i++){var e=central[i];',
+'cd.setUint32(cdP,0x02014b50,true);cd.setUint16(cdP+4,20,true);cd.setUint16(cdP+6,20,true);',
+'cd.setUint16(cdP+8,0x0800,true);cd.setUint16(cdP+10,0,true);cd.setUint16(cdP+12,0,true);',
+'cd.setUint16(cdP+14,0,true);cd.setUint32(cdP+16,e.crc,true);',
+'cd.setUint32(cdP+20,e.sz,true);cd.setUint32(cdP+24,e.sz,true);',
+'cd.setUint16(cdP+28,e.nb.length,true);cd.setUint16(cdP+30,0,true);',
+'cd.setUint16(cdP+32,0,true);cd.setUint16(cdP+34,0,true);cd.setUint16(cdP+36,0,true);',
+'cd.setUint32(cdP+38,0,true);cd.setUint32(cdP+42,e.off,true);',
+'for(var j=0;j<e.nb.length;j++)cd.setUint8(cdP+46+j,e.nb[j]);cdP+=46+e.nb.length}',
+'var eocd=new ArrayBuffer(22);var e=new DataView(eocd);',
+'e.setUint32(0,0x06054b50,true);e.setUint16(4,0,true);e.setUint16(6,0,true);',
+'e.setUint16(8,central.length,true);e.setUint16(10,central.length,true);',
+'e.setUint32(12,cdS,true);e.setUint32(16,offset,true);e.setUint16(20,0,true);',
+'parts.push(cdB,eocd);',
+'var ts=parts.reduce(function(s,p){return s+p.byteLength},0),fb=new Uint8Array(ts),p=0;',
+'for(var i=0;i<parts.length;i++){fb.set(new Uint8Array(parts[i]),p);p+=parts[i].byteLength}',
+'return fb.buffer}',
+'function anaFrames(samples,fs){',
+'var frames=[],total=samples.length;',
+'for(var i=0;i<total;i+=fs){var end=Math.min(i+fs,total),sum=0;for(var j=i;j<end;j++)sum+=samples[j]*samples[j];',
+'frames.push({start:i,end:end,rms:Math.sqrt(sum/(end-i)),dB:a2dB(Math.sqrt(sum/(end-i)))});',
+'if((frames.length&0xff)===0&&cancelled)return null}',
+'return frames}',
+'function findSilence(frames,fs,sr,minMs,thresh,total){',
+'var thr=Math.pow(10,thresh/20),minF=Math.ceil((minMs/1000*sr)/fs),runs=[],sil=false,rs=0;',
+'for(var i=0;i<frames.length;i++){var isSil=frames[i].rms<=thr;',
+'if(isSil){if(!sil){sil=true;rs=i}}else{if(sil){if(i-rs>=minF)runs.push({sf:rs,ef:i,ss:rs*fs,es:Math.min(i*fs,total)});sil=false}}',
+'if((i&0xff)===0&&cancelled)return null}',
+'if(sil&&frames.length-rs>=minF)runs.push({sf:rs,ef:frames.length,ss:rs*fs,es:total});',
+'return runs}',
+'function extractSeg(samples,runs,keep){',
+'var segs=[],last=0;',
+'for(var i=0;i<runs.length;i++){var r=runs[i];if(r.ss>last){var st=Math.max(0,last-keep),en=Math.min(samples.length,r.ss+keep);if(en>st)segs.push(samples.slice(st,en))}last=r.es}',
+'if(last<samples.length){var en=Math.min(samples.length,last+keep);segs.push(samples.slice(last,en))}',
+'return segs}',
+'self.onmessage=function(e){',
+'var msg=e.data;',
+'if(msg.type==="cancel"){cancelled=true;return}',
+'if(msg.type==="zip"){var zip=mkZIP(msg.files);pt("zipdone",{zipData:zip});return}',
+'if(msg.type==="process"){',
+'cancelled=false;var samples=new Float32Array(msg.audioData);var sr=msg.sampleRate;var ch=msg.channels;var bn=msg.baseName;var p=msg.params;',
+'var dur=samples.length/sr;var fs=Math.floor(sr*0.01);var fmt=p.format||"wav";',
+'pt("log",{msg:"音频: "+dur.toFixed(2)+"秒, 采样率: "+sr+"Hz, 格式: "+fmt.toUpperCase()});pt("progress",{pct:5});',
+'var frames=anaFrames(samples,fs);if(!frames||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
+'pt("progress",{pct:20});',
+'var runs=findSilence(frames,fs,sr,p.minSilenceLen,p.silenceThresh,samples.length);',
+'if(!runs||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
+'pt("log",{msg:"检测到 "+runs.length+" 个静音段"});pt("progress",{pct:25});',
+'if(runs.length===0)pt("log",{msg:"未检测到足够的静音段，请尝试降低阈值或减小最小静音长度",level:"warn"});',
+'var keep=Math.floor(sr*p.keepSilence/1000);var raw=extractSeg(samples,runs,keep);',
+'pt("log",{msg:"共 "+raw.length+" 个候选片段，正在编码..."});pt("progress",{pct:30});',
+'var minSeg=sr,res=[],ext=fmt==="mp3"?".mp3":".wav";',
+'for(var i=0;i<raw.length;i++){',
+'if(cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
+'var seg=raw[i];if(seg.length<minSeg){pt("log",{msg:"跳过短片段 "+(i+1)+" ("+(seg.length/sr).toFixed(2)+"秒)",level:"warn"});continue}',
+'var segDur=seg.length/sr;var segName=bn+"-"+String(i+1).padStart(2,"0")+ext;',
+'var pct=30+((i+1)/raw.length)*65;var data;',
+'if(fmt==="mp3"){data=encMP3(seg,sr);if(!data){pt("log",{msg:"MP3 编码失败，请检查网络连接或切换为 WAV 格式",level:"error"});pt("complete",{segments:[]});return}}',
+'else{data=encWAV(seg,sr);if(!data){pt("complete",{segments:[]});return}}',
+'res.push({index:i+1,name:segName,duration:segDur,size:data.byteLength,data:data,samples:seg.buffer});',
+'pt("log",{msg:"片段 "+(i+1)+": "+segName+" ("+segDur.toFixed(2)+"秒)"});pt("progress",{pct:Math.min(Math.round(pct),99)})}',
+'pt("progress",{pct:100});pt("log",{msg:"处理完成，共生成 "+res.length+" 个音频片段",level:"success"});pt("complete",{segments:res})}}'
+].join('\n');
 
-function yieldToMain() { return new Promise(r => setTimeout(r, 0)); }
+// =========================================================================
+//  Main Application
+// =========================================================================
 
-function amplitudeToDB(v) { return 20 * Math.log10(Math.max(v, 1e-15)); }
+var worker = null;
+var results = [];
+var isProcessing = false;
+var baseName = 'audio';
 
-async function encodeWAV(samples, sampleRate) {
-  const len = samples.length;
-  const buffer = new ArrayBuffer(44 + len * 2);
-  const view = new DataView(buffer);
-
-  function writeString(offset, str) {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-  }
-
-  writeString(0, 'RIFF');
-  view.setUint32(4, 36 + len * 2, true);
-  writeString(8, 'WAVE');
-  writeString(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  writeString(36, 'data');
-  view.setUint32(40, len * 2, true);
-
-  const batch = 44100;
-  let offset = 44;
-  for (let i = 0; i < len; i += batch) {
-    const end = Math.min(i + batch, len);
-    for (let j = i; j < end; j++) {
-      const s = Math.max(-1, Math.min(1, samples[j]));
-      view.setInt16(offset, s < 0 ? s * 32768 : s * 32767, true);
-      offset += 2;
-    }
-    if (i + batch < len) await yieldToMain();
-  }
-
-  return new Blob([buffer], { type: 'audio/wav' });
-}
-
-// CRC32 table
-const crcTable = new Uint32Array(256);
-for (let i = 0; i < 256; i++) {
-  let c = i;
-  for (let j = 0; j < 8; j++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-  crcTable[i] = c;
-}
-function crc32(data) {
-  let c = 0xffffffff;
-  for (let i = 0; i < data.length; i++) c = crcTable[(c ^ data[i]) & 0xff] ^ (c >>> 8);
-  return (c ^ 0xffffffff) >>> 0;
-}
-
-async function generateZIP(files) {
-  const blobParts = [];
-  let offset = 0;
-  const central = [];
-
-  for (let fi = 0; fi < files.length; fi++) {
-    const { name, data } = files[fi];
-    const nameBytes = new TextEncoder().encode(name);
-    const raw = new Uint8Array(data);
-    const crc = crc32(raw);
-    const size = raw.length;
-
-    // Local file header
-    const hdr = new ArrayBuffer(30 + nameBytes.length);
-    const v = new DataView(hdr);
-    v.setUint32(0, 0x04034b50, true);
-    v.setUint16(4, 20, true);
-    v.setUint16(6, 0x0800, true); // flags: UTF-8
-    v.setUint16(8, 0, true);      // stored
-    v.setUint16(10, 0, true);
-    v.setUint16(12, 0, true);
-    v.setUint32(14, crc, true);
-    v.setUint32(18, size, true);
-    v.setUint32(22, size, true);
-    v.setUint16(26, nameBytes.length, true);
-    v.setUint16(28, 0, true);
-    for (let i = 0; i < nameBytes.length; i++) v.setUint8(30 + i, nameBytes[i]);
-
-    blobParts.push(hdr, raw);
-    central.push({ nameBytes, crc, size, offset });
-    offset += hdr.byteLength + size;
-
-    if (fi % 10 === 0) await yieldToMain();
-  }
-
-  // Central directory
-  const cdSize = central.reduce((s, e) => s + 46 + e.nameBytes.length, 0);
-  const cdBuf = new ArrayBuffer(cdSize);
-  const cd = new DataView(cdBuf);
-  let cdPos = 0;
-  for (const e of central) {
-    cd.setUint32(cdPos, 0x02014b50, true);
-    cd.setUint16(cdPos + 4, 20, true);
-    cd.setUint16(cdPos + 6, 20, true);
-    cd.setUint16(cdPos + 8, 0x0800, true); // UTF-8
-    cd.setUint16(cdPos + 10, 0, true);
-    cd.setUint16(cdPos + 12, 0, true);
-    cd.setUint16(cdPos + 14, 0, true);
-    cd.setUint32(cdPos + 16, e.crc, true);
-    cd.setUint32(cdPos + 20, e.size, true);
-    cd.setUint32(cdPos + 24, e.size, true);
-    cd.setUint16(cdPos + 28, e.nameBytes.length, true);
-    cd.setUint16(cdPos + 30, 0, true);
-    cd.setUint16(cdPos + 32, 0, true);
-    cd.setUint16(cdPos + 34, 0, true);
-    cd.setUint16(cdPos + 36, 0, true);
-    cd.setUint32(cdPos + 38, 0, true);
-    cd.setUint32(cdPos + 42, e.offset, true);
-    for (let i = 0; i < e.nameBytes.length; i++) cd.setUint8(cdPos + 46 + i, e.nameBytes[i]);
-    cdPos += 46 + e.nameBytes.length;
-  }
-
-  // End of central directory
-  const eocd = new ArrayBuffer(22);
-  const e = new DataView(eocd);
-  e.setUint32(0, 0x06054b50, true);
-  e.setUint16(4, 0, true);
-  e.setUint16(6, 0, true);
-  e.setUint16(8, central.length, true);
-  e.setUint16(10, central.length, true);
-  e.setUint32(12, cdSize, true);
-  e.setUint32(16, offset, true);
-  e.setUint16(20, 0, true);
-
-  blobParts.push(cdBuf, eocd);
-  return new Blob(blobParts, { type: 'application/zip' });
-}
-
-class AudioSegmenter {
-  constructor() {
-    this.audioContext = null;
-    this.audioBuffer = null;
-    this.monoData = null;
-    this.fileName = '';
-    this.baseName = '';
-    this.cancelled = false;
-  }
-
-  async loadFile(file) {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    if (ctx.state === 'suspended') await ctx.resume();
-    this.audioContext = ctx;
-    this.fileName = file.name;
-    this.baseName = file.name.replace(/\.[^/.]+$/, '');
-    const arrayBuffer = await file.arrayBuffer();
-    try {
-      this.audioBuffer = await ctx.decodeAudioData(arrayBuffer);
-    } catch (e) {
-      throw new Error(`解码失败，浏览器不支持此音频格式: ${e.message}`);
-    }
-    this.monoData = this.mixToMono();
-  }
-
-  mixToMono() {
-    const buf = this.audioBuffer;
-    const ch = buf.numberOfChannels;
-    const len = buf.length;
-    const mono = new Float32Array(len);
-    if (ch === 1) {
-      mono.set(buf.getChannelData(0));
-    } else {
-      const chData = [];
-      for (let i = 0; i < ch; i++) chData.push(buf.getChannelData(i));
-      const invCh = 1 / ch;
-      for (let j = 0; j < len; j++) {
-        let s = 0;
-        for (let i = 0; i < ch; i++) s += chData[i][j];
-        mono[j] = s * invCh;
-      }
-    }
-    return mono;
-  }
-
-  async analyzeFrames(samples, frameSize, onProgress) {
-    const frames = [];
-    const total = samples.length;
-    const reportEvery = Math.max(1, Math.floor(total / frameSize / 200));
-    for (let i = 0; i < total; i += frameSize) {
-      const end = Math.min(i + frameSize, total);
-      let sumSq = 0;
-      for (let j = i; j < end; j++) sumSq += samples[j] * samples[j];
-      const rms = Math.sqrt(sumSq / (end - i));
-      frames.push({ start: i, end, rms, dB: amplitudeToDB(rms) });
-      if ((frames.length % reportEvery) === 0) {
-        onProgress(10 + (i / total) * 10);
-        await yieldToMain();
-      }
-    }
-    return frames;
-  }
-
-  getThreshold(silenceThresh) {
-    return Math.pow(10, silenceThresh / 20);
-  }
-
-  async findSilenceRuns(frames, frameSize, sampleRate, minSilenceMs, silenceThresh, totalSamples, onProgress) {
-    const threshold = this.getThreshold(silenceThresh);
-    const minSilenceFrames = Math.ceil(minSilenceMs / 1000 * sampleRate / frameSize);
-    const runs = [];
-    let inSilence = false;
-    let runStart = 0;
-    const reportEvery = Math.max(1, Math.floor(frames.length / 20));
-
-    for (let i = 0; i < frames.length; i++) {
-      const isSilent = frames[i].rms <= threshold;
-      if (isSilent) {
-        if (!inSilence) { inSilence = true; runStart = i; }
-      } else {
-        if (inSilence) {
-          if (i - runStart >= minSilenceFrames) {
-            runs.push({ startFrame: runStart, endFrame: i,
-              startSample: runStart * frameSize,
-              endSample: i * frameSize });
-          }
-          inSilence = false;
-        }
-      }
-      if ((i % reportEvery) === 0) {
-        onProgress(20 + (i / frames.length) * 5);
-        await yieldToMain();
-      }
-    }
-    if (inSilence && frames.length - runStart >= minSilenceFrames) {
-      runs.push({ startFrame: runStart, endFrame: frames.length,
-        startSample: runStart * frameSize,
-        endSample: totalSamples });
-    }
-
-    return runs;
-  }
-
-  extractSegments(samples, silenceRuns, keepSilenceSamples) {
-    const segments = [];
-    let lastEnd = 0;
-
-    for (const run of silenceRuns) {
-      const segStart = run.startSample;
-      const segEnd = run.endSample;
-
-      if (segStart > lastEnd) {
-        const start = Math.max(0, lastEnd - keepSilenceSamples);
-        const end = Math.min(samples.length, segStart + keepSilenceSamples);
-        if (end > start) segments.push(samples.slice(start, end));
-      }
-
-      lastEnd = segEnd;
-    }
-
-    if (lastEnd < samples.length) {
-      const end = Math.min(samples.length, lastEnd + keepSilenceSamples);
-      segments.push(samples.slice(lastEnd, end));
-    }
-
-    return segments;
-  }
-
-  async segment({ minSilenceLen, silenceThresh, keepSilence }, callbacks) {
-    this.cancelled = false;
-    const { onProgress, onStatus, onLog } = callbacks;
-    const sampleRate = this.audioBuffer.sampleRate;
-
-    onStatus('正在分割...');
-    onProgress(5);
-    await yieldToMain();
-
-    const mono = this.monoData;
-    const duration = mono.length / sampleRate;
-    const frameSize = Math.floor(sampleRate * 0.01);
-
-    onLog(`音频: ${duration.toFixed(2)}秒, 采样率: ${sampleRate}Hz, 通道数: ${this.audioBuffer.numberOfChannels}`);
-    await yieldToMain();
-
-    onStatus('正在分析音频波形...');
-    onProgress(10);
-    await yieldToMain();
-
-    const frames = await this.analyzeFrames(mono, frameSize, onProgress);
-
-    onStatus('正在检测静音...');
-    onProgress(20);
-    await yieldToMain();
-
-    const silenceRuns = await this.findSilenceRuns(frames, frameSize, sampleRate, minSilenceLen, silenceThresh, mono.length, onProgress);
-
-    onLog(`检测到 ${silenceRuns.length} 个静音段`);
-    onProgress(25);
-
-    if (this.cancelled) { onLog('已取消'); return []; }
-    if (silenceRuns.length === 0) {
-      onLog('未检测到足够的静音段，请尝试降低阈值或减小最小静音长度', 'warn');
-    }
-
-    const keepSilenceSamples = Math.floor(sampleRate * keepSilence / 1000);
-    const rawSegments = this.extractSegments(mono, silenceRuns, keepSilenceSamples);
-
-    onLog(`共 ${rawSegments.length} 个候选片段，正在编码...`);
-    onProgress(30);
-    await yieldToMain();
-
-    const minSegSamples = sampleRate;
-    const results = [];
-
-    for (let i = 0; i < rawSegments.length; i++) {
-      if (this.cancelled) { onLog('已取消'); return []; }
-
-      if (rawSegments[i].length < minSegSamples) {
-        onLog(`跳过短片段 ${i+1} (${(rawSegments[i].length / sampleRate).toFixed(2)}秒)`, 'warn');
-        continue;
-      }
-
-      onStatus(`正在生成片段 ${i+1}/${rawSegments.length}...`);
-      const pct = 30 + ((i + 1) / rawSegments.length) * 65;
-      onProgress(Math.min(Math.round(pct), 99));
-      await yieldToMain();
-
-      const blob = await encodeWAV(rawSegments[i], sampleRate);
-      const segDuration = rawSegments[i].length / sampleRate;
-      const segName = `${this.baseName}_segment_${String(i+1).padStart(3, '0')}.wav`;
-
-      results.push({
-        index: i + 1,
-        samples: rawSegments[i],
-        sampleRate,
-        duration: segDuration,
-        blob,
-        url: URL.createObjectURL(blob),
-        name: segName,
-        size: blob.size
-      });
-
-      onLog(`片段 ${i+1}: ${segName} (${segDuration.toFixed(2)}秒)`);
-    }
-
-    onProgress(100);
-    onStatus(`完成！共 ${results.length} 个片段`);
-    onLog(`处理完成，共生成 ${results.length} 个音频片段`, 'success');
-
-    return results;
-  }
-
-  cancel() { this.cancelled = true; }
-}
-
-// ========================================================================
-//  UI 逻辑
-// ========================================================================
-
-let segmenter = null;
-let results = [];
-let isProcessing = false;
-const pb = { ctx: null, index: -1, source: null, startTime: 0, offset: 0,
+var pb = {
+  ctx: null, index: -1, source: null, startTime: 0, offset: 0,
   duration: 0, playing: false, paused: false, btn: null,
-  progRow: null, progFill: null, progCur: null, progTotal: null, timerId: null };
+  progRow: null, progFill: null, progCur: null, progTotal: null, timerId: null
+};
 
 function $(id) { return document.getElementById(id); }
 
-// Init
-document.addEventListener('DOMContentLoaded', () => {
-  const theme = localStorage.getItem('theme') || 'light';
+function initWorker() {
+  if (worker) { worker.terminate(); worker = null; }
+  try {
+    var blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
+    worker = new Worker(URL.createObjectURL(blob));
+  } catch (e) {
+    addLog('无法创建 Web Worker，请使用更新版本的浏览器', 'error');
+  }
+}
+
+  document.addEventListener('DOMContentLoaded', function() {
+  var theme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', theme);
   $('themeBtn').textContent = theme === 'dark' ? '🌙' : '☀️';
 
   setupUpload();
   setupParams();
+  $('themeBtn').addEventListener('click', function(e) { toggleTheme(e); });
+  $('startBtn').addEventListener('click', startProcessing);
+  $('cancelBtn').addEventListener('click', cancelProcessing);
+  $('downloadAllBtn').addEventListener('click', downloadAll);
+
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (results.length > 0) {
+        var firstCard = document.querySelector('.result-card');
+        if (firstCard) {
+          var playBtn = firstCard.querySelector('.play-btn');
+          if (playBtn) togglePlay(parseInt(playBtn.dataset.index), playBtn);
+        }
+      }
+    }
+    if (e.key === 'Escape') stopPlay();
+    if (e.key === 'Enter' && !isProcessing && !$('startBtn').disabled) {
+      startProcessing();
+    }
+  });
 });
 
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  $('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
+function toggleTheme(e) {
+  var x = e.clientX, y = e.clientY;
+  document.documentElement.style.setProperty('--click-x', x + 'px');
+  document.documentElement.style.setProperty('--click-y', y + 'px');
+  var current = document.documentElement.getAttribute('data-theme');
+  var next = current === 'dark' ? 'light' : 'dark';
+  if (document.startViewTransition) {
+    document.startViewTransition(function() {
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      $('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
+      redrawWaveforms();
+    });
+  } else {
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    $('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
+    redrawWaveforms();
+  }
 }
 
-// Upload
 function setupUpload() {
-  const zone = $('uploadZone');
-  const input = $('fileInput');
+  var zone = $('uploadZone');
+  var input = $('fileInput');
 
-  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('click', function() { input.click(); });
 
-  zone.addEventListener('dragover', (e) => {
+  zone.addEventListener('dragover', function(e) {
     e.preventDefault();
     zone.classList.add('dragover');
   });
-  zone.addEventListener('dragleave', () => {
-    zone.classList.remove('dragover');
-  });
-  zone.addEventListener('drop', (e) => {
+  zone.addEventListener('dragleave', function() { zone.classList.remove('dragover'); });
+  zone.addEventListener('drop', function(e) {
     e.preventDefault();
     zone.classList.remove('dragover');
     if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
   });
 
-  input.addEventListener('change', () => {
+  input.addEventListener('change', function() {
     if (input.files.length) handleFile(input.files[0]);
+  });
+
+  $('removeBtn').addEventListener('click', removeFile);
+}
+
+function setupParams() {
+  ['minSilence', 'silenceThresh', 'keepSilence'].forEach(function(id) {
+    $(id).addEventListener('input', function() { updateParam(id); });
   });
 }
 
-async function handleFile(file) {
+function updateParam(id) {
+  var el = $(id);
+  var valEl = $(id + 'Val');
+  if (id === 'minSilence') valEl.textContent = el.value + ' ms';
+  else if (id === 'silenceThresh') valEl.textContent = el.value + ' dB';
+  else if (id === 'keepSilence') valEl.textContent = el.value + ' ms';
+}
+
+function handleFile(file) {
   if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|wma)$/i)) {
     addLog('不支持的文件格式', 'error');
     return;
   }
 
-  // Clean up previous
   stopPlay();
-  if (segmenter && segmenter.audioContext) {
-    await segmenter.audioContext.close();
-  }
-  if (pb.ctx) { pb.ctx.close(); pb.ctx = null; }
-  segmenter = null;
-  results = [];
-  clearResults();
-  $('progressSection').classList.remove('show');
-  $('resultsSection').classList.remove('show');
+  cleanupPrevious();
 
-  const fi = $('fileInfo');
-  fi.classList.add('show');
+  $('fileInfo').classList.add('show');
   $('fileName').textContent = file.name;
   $('fileSize').textContent = formatSize(file.size);
   $('fileDuration').textContent = '加载中...';
 
-  // Decode
-  try {
-    segmenter = new AudioSegmenter();
-    await segmenter.loadFile(file);
-    const dur = segmenter.audioBuffer.duration;
-    $('fileDuration').textContent = formatDuration(dur);
+  var reader = new FileReader();
+  reader.onerror = function() {
+    $('fileDuration').textContent = '读取失败';
+    addLog('文件读取失败', 'error');
+  };
+  reader.onload = function(evt) {
+    decodeAudio(evt.target.result, file.name);
+  };
+  reader.readAsArrayBuffer(file);
+}
 
+function decodeAudio(arrayBuffer, fileName) {
+  var ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (ctx.state === 'suspended') ctx.resume();
+
+  ctx.decodeAudioData(arrayBuffer, function(audioBuffer) {
+    var mono = mixToMono(audioBuffer);
+    var sampleRate = audioBuffer.sampleRate;
+    var duration = mono.length / sampleRate;
+    var channels = audioBuffer.numberOfChannels;
+    baseName = fileName.replace(/\.[^/.]+$/, '');
+
+    $('fileDuration').textContent = formatDuration(duration);
     $('paramsCard').classList.remove('hidden');
     $('controlsCard').classList.remove('hidden');
     $('startBtn').disabled = false;
-    addLog(`已加载: ${file.name} (${formatDuration(dur)})`, 'success');
-  } catch (err) {
-    const msg = err.message || '';
-    if (msg.includes('解码失败')) {
-      addLog(msg, 'error');
-    } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('read')) {
-      addLog(`文件读取失败: ${msg}`, 'error');
-    } else {
-      addLog(`加载失败: ${msg}`, 'error');
+
+    addLog('已加载: ' + fileName + ' (' + formatDuration(duration) + ')', 'success');
+
+    initWorker();
+
+    window.__monoData = mono;
+    window.__sampleRate = sampleRate;
+
+    ctx.close();
+  }, function(err) {
+    $('fileDuration').textContent = '解码失败';
+    addLog('解码失败，浏览器不支持此音频格式' + (err ? ': ' + err : ''), 'error');
+    ctx.close();
+  });
+}
+
+function mixToMono(buf) {
+  var ch = buf.numberOfChannels;
+  var len = buf.length;
+  var mono = new Float32Array(len);
+  if (ch === 1) {
+    mono.set(buf.getChannelData(0));
+  } else {
+    var chData = [];
+    for (var i = 0; i < ch; i++) chData.push(buf.getChannelData(i));
+    var invCh = 1 / ch;
+    for (var j = 0; j < len; j++) {
+      var s = 0;
+      for (var i = 0; i < ch; i++) s += chData[i][j];
+      mono[j] = s * invCh;
     }
-    $('fileDuration').textContent = '加载失败';
-    console.error(err);
   }
+  return mono;
+}
+
+function cleanupPrevious() {
+  if (window.__monoData) window.__monoData = null;
+  results.forEach(function(r) { if (r.url) URL.revokeObjectURL(r.url); });
+  results = [];
+  if (worker) { worker.terminate(); worker = null; }
+  isProcessing = false;
+  _waveformCanvases = [];
+  $('progressFill').classList.remove('active');
+  $('statusText').classList.remove('pulse');
+  $('resultsList').innerHTML = '';
+  $('resultsSection').classList.remove('show');
+  $('progressSection').classList.remove('show');
+  $('fileInput').value = '';
 }
 
 function removeFile() {
   stopPlay();
-  if (pb.ctx) { pb.ctx.close(); pb.ctx = null; }
+  cleanupPrevious();
   $('fileInfo').classList.remove('show');
   $('paramsCard').classList.add('hidden');
   $('controlsCard').classList.add('hidden');
-  $('progressSection').classList.remove('show');
-  $('resultsSection').classList.remove('show');
-  $('fileInput').value = '';
   clearLog();
-  if (segmenter && segmenter.audioContext) segmenter.audioContext.close();
-  segmenter = null;
-  results = [];
-  isProcessing = false;
 }
 
-function formatSize(bytes) {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
-}
-
-function formatDuration(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return m > 0 ? `${m}分${s}秒` : `${s}秒`;
-}
-
-function formatDurShort(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return m > 0 ? `${m}:${String(s).padStart(2, '0')}` : `0:${String(s).padStart(2, '0')}`;
-}
-
-// Parameters
-function setupParams() {
-  ['minSilence', 'silenceThresh', 'keepSilence'].forEach(id => {
-    const el = $(id);
-    el.addEventListener('input', () => updateParam(id));
-  });
-}
-
-function updateParam(id) {
-  const el = $(id);
-  const valEl = $(id + 'Val');
-  if (id === 'minSilence') valEl.textContent = `${el.value} ms`;
-  else if (id === 'silenceThresh') valEl.textContent = `${el.value} dB`;
-  else if (id === 'keepSilence') valEl.textContent = `${el.value} ms`;
-}
-
-// Processing
-async function startProcessing() {
-  if (!segmenter || !segmenter.audioBuffer) return;
+function startProcessing() {
   if (isProcessing) return;
+  if (!window.__monoData) {
+    addLog('请先加载音频文件', 'error');
+    return;
+  }
+  if (!worker) {
+    initWorker();
+    if (!worker) { addLog('Worker 初始化失败', 'error'); return; }
+  }
 
   isProcessing = true;
   $('startBtn').disabled = true;
   $('cancelBtn').disabled = false;
-  clearResults();
 
-  const ps = $('progressSection');
-  ps.classList.add('show');
+  cleanupResults();
+
+  $('progressSection').classList.add('show');
   $('resultsSection').classList.remove('show');
   $('progressFill').style.width = '0%';
-  $('statusText').textContent = '准备就绪';
+  $('progressFill').classList.add('active');
+  $('statusText').textContent = '正在处理...';
+  $('statusText').classList.add('pulse');
   clearLog();
-  await yieldToMain();
-  ps.scrollIntoView({ block: 'start' });
 
-  const params = {
+  var params = {
     minSilenceLen: parseInt($('minSilence').value),
     silenceThresh: parseInt($('silenceThresh').value),
-    keepSilence: parseInt($('keepSilence').value)
+    keepSilence: parseInt($('keepSilence').value),
+    format: $('formatSelect').value
   };
 
-  const estSec = Math.max(2, Math.round(segmenter.audioBuffer.duration * 0.15));
-  addLog(`参数: 静音长度=${params.minSilenceLen}ms, 阈值=${params.silenceThresh}dB, 保留静音=${params.keepSilence}ms`);
-  const startTime = Date.now();
+  var startTime = Date.now();
+  addLog('参数: 静音长度=' + params.minSilenceLen + 'ms, 阈值=' + params.silenceThresh + 'dB, 保留=' + params.keepSilence + 'ms, 格式=' + params.format.toUpperCase());
 
-  try {
-    results = await segmenter.segment(params, {
-      onProgress: (pct) => { $('progressFill').style.width = pct + '%'; },
-      onStatus: (msg) => { $('statusText').textContent = msg; },
-      onLog: (msg, level) => { addLog(msg, level); }
-    });
+  var mono = window.__monoData;
+  var sampleRate = window.__sampleRate || 44100;
 
-    showResults(results);
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    addLog(`实际耗时 ${elapsed} 秒`, 'success');
-  } catch (err) {
-    addLog(`处理出错: ${err.message}`, 'error');
-    console.error(err);
-  } finally {
-    isProcessing = false;
-    $('startBtn').disabled = false;
-    $('cancelBtn').disabled = true;
-  }
+  worker.addEventListener('message', function handler(e) {
+    var msg = e.data;
+    switch (msg.type) {
+      case 'progress':
+        $('progressFill').style.width = (msg.pct || 0) + '%';
+        break;
+      case 'log':
+        addLog(msg.msg, msg.level);
+        break;
+      case 'complete':
+        worker.removeEventListener('message', handler);
+        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        isProcessing = false;
+        $('startBtn').disabled = false;
+        $('cancelBtn').disabled = true;
+        $('progressFill').classList.remove('active');
+        $('statusText').classList.remove('pulse');
+
+        var segs = msg.segments || [];
+        if (segs.length === 0) {
+          $('statusText').textContent = '未生成片段';
+          if (!window.__monoData) addLog('请重新加载音频文件', 'warn');
+          return;
+        }
+
+        results = segs.map(function(seg) {
+          return {
+            index: seg.index,
+            name: seg.name,
+            duration: seg.duration,
+            size: seg.size,
+            samples: new Float32Array(seg.samples),
+            sampleRate: sampleRate,
+            data: seg.data,
+            url: URL.createObjectURL(new Blob([seg.data], { type: seg.name.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav' }))
+          };
+        });
+
+        showResults(results);
+        $('statusText').textContent = '完成！共 ' + results.length + ' 个片段（耗时 ' + elapsed + ' 秒）';
+        addLog('实际耗时 ' + elapsed + ' 秒', 'success');
+        break;
+    }
+  });
+
+  var audioData = mono.buffer.slice(0);
+  worker.postMessage({ type: 'process', audioData: audioData, sampleRate: sampleRate, channels: 1, baseName: baseName, params: params }, [audioData]);
 }
 
 function cancelProcessing() {
-  if (segmenter) segmenter.cancel();
-  addLog('正在取消...', 'warn');
+  if (worker) {
+    worker.postMessage({ type: 'cancel' });
+    addLog('正在取消...', 'warn');
+  }
   $('cancelBtn').disabled = true;
+  $('progressFill').classList.remove('active');
+  $('statusText').classList.remove('pulse');
 }
 
-// Log
 function addLog(msg, level) {
-  const box = $('logBox');
-  const entry = document.createElement('div');
+  var box = $('logBox');
+  var entry = document.createElement('div');
   entry.className = 'log-entry' + (level ? ' log-' + level : '');
-  const time = new Date().toLocaleTimeString();
-  entry.textContent = `[${time}] ${msg}`;
+  var time = new Date().toLocaleTimeString();
+  entry.textContent = '[' + time + '] ' + msg;
   box.appendChild(entry);
   box.scrollTop = box.scrollHeight;
 }
@@ -901,92 +786,76 @@ function clearLog() {
   $('logBox').innerHTML = '';
 }
 
-// Results
 function showResults(segments) {
   if (!segments.length) {
     addLog('没有生成任何片段，请调整参数后重试', 'error');
     return;
   }
 
-  const rs = $('resultsSection');
+  var rs = $('resultsSection');
   rs.classList.add('show');
 
-  $('resultsSummary').textContent = `共 ${segments.length} 个片段，总时长 ${formatDuration(segments.reduce((s, r) => s + r.duration, 0))}`;
+  var totalDuration = 0;
+  for (var i = 0; i < segments.length; i++) totalDuration += segments[i].duration;
+  $('resultsSummary').textContent = '共 ' + segments.length + ' 个片段，总时长 ' + formatDuration(totalDuration);
 
-  const list = $('resultsList');
+  var list = $('resultsList');
   list.innerHTML = '';
 
-  segments.forEach((seg, i) => {
-    const card = document.createElement('div');
+  for (var i = 0; i < segments.length; i++) {
+    var seg = segments[i];
+    var card = document.createElement('div');
     card.className = 'result-card';
     card.id = 'result-' + i;
 
-    const idxDiv = document.createElement('div');
+    var idxDiv = document.createElement('div');
     idxDiv.className = 'index';
     idxDiv.textContent = i + 1;
 
-    const waveWrap = document.createElement('div');
+    var waveWrap = document.createElement('div');
     waveWrap.className = 'waveform-wrap';
-    const canvas = document.createElement('canvas');
+    var canvas = document.createElement('canvas');
     canvas.width = 240;
     canvas.height = 72;
     waveWrap.appendChild(canvas);
 
-    const info = document.createElement('div');
+    var info = document.createElement('div');
     info.className = 'info';
-    info.innerHTML = `<div class="name">${seg.name}</div><div class="duration">${formatDurShort(seg.duration)} · ${formatSize(seg.size)}</div>`;
+    info.innerHTML = '<div class="name">' + escHtml(seg.name) + '</div><div class="duration">' + formatDurShort(seg.duration) + ' · ' + formatSize(seg.size) + '</div>';
 
-    const actions = document.createElement('div');
+    var actions = document.createElement('div');
     actions.className = 'actions';
 
-    const playBtn = document.createElement('button');
+    var playBtn = document.createElement('button');
     playBtn.className = 'play-btn';
     playBtn.innerHTML = '▶';
-    playBtn.title = '播放';
     playBtn.dataset.index = i;
-    playBtn.addEventListener('click', () => togglePlay(i, playBtn));
+    playBtn.addEventListener('click', makePlayHandler(i, playBtn));
 
-    const dlBtn = document.createElement('button');
+    var dlBtn = document.createElement('button');
     dlBtn.innerHTML = '⬇';
-    dlBtn.title = '下载';
-    dlBtn.addEventListener('click', () => downloadSegment(i));
+    dlBtn.addEventListener('click', makeDownloadHandler(i));
 
     actions.appendChild(playBtn);
     actions.appendChild(dlBtn);
 
-    // Progress bar
-    const progRow = document.createElement('div');
+    var progRow = document.createElement('div');
     progRow.className = 'prog-row';
     progRow.style.display = 'none';
-    const timeCur = document.createElement('span');
+    var timeCur = document.createElement('span');
     timeCur.className = 'prog-time prog-cur';
     timeCur.textContent = '0:00';
-    const progBar = document.createElement('div');
+    var progBar = document.createElement('div');
     progBar.className = 'prog-bar';
-    const progFill = document.createElement('div');
+    var progFill = document.createElement('div');
     progFill.className = 'prog-fill';
     progBar.appendChild(progFill);
-    const timeTotal = document.createElement('span');
+    var timeTotal = document.createElement('span');
     timeTotal.className = 'prog-time prog-total';
     timeTotal.textContent = formatPlayTime(seg.duration);
     progRow.appendChild(timeCur);
     progRow.appendChild(progBar);
     progRow.appendChild(timeTotal);
-
-    // Seek click
-    progBar.addEventListener('click', (e) => {
-      if (pb.index !== i) return;
-      const rect = progBar.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-      pb.offset = ratio * pb.duration;
-      progFill.style.width = (ratio * 100) + '%';
-      timeCur.textContent = formatPlayTime(pb.offset);
-      if (pb.playing && !pb.paused) {
-        pb.paused = true;
-        if (pb.source) { try { pb.source.stop(); } catch(e) {} }
-        doPlay(i, playBtn);
-      }
-    });
 
     card.appendChild(idxDiv);
     card.appendChild(waveWrap);
@@ -996,44 +865,82 @@ function showResults(segments) {
     list.appendChild(card);
 
     drawWaveform(canvas, seg.samples);
-  });
+    registerWaveform(canvas, seg.samples);
+  }
 
-  setTimeout(() => {
-    const first = $('result-0');
+  setTimeout(function() {
+    var first = $('result-0');
     if (first) first.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }, 200);
 }
 
+function escHtml(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function makePlayHandler(i, btn) {
+  return function() { togglePlay(i, btn); };
+}
+
+function makeDownloadHandler(i) {
+  return function() { downloadSegment(i); };
+}
+
 function drawWaveform(canvas, samples) {
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const mid = h / 2;
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var mid = h / 2;
 
-  ctx.clearRect(0, 0, w, h);
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  var waveColor = isDark ? '#0a84ff' : '#007aff';
+  var bgColor = isDark ? '#3a3a3c' : '#e8e8ea';
+  var centerColor = isDark ? '#48484a' : '#d2d2d7';
 
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const waveColor = isDark ? '#0a84ff' : '#007aff';
-  const bgColor = isDark ? '#3a3a3c' : '#e8e8ea';
-  const centerColor = isDark ? '#48484a' : '#d2d2d7';
+  var imageData = ctx.createImageData(w, h);
+  var pixels = imageData.data;
 
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, w, h);
+  var bgR = parseInt(bgColor.slice(1,3), 16);
+  var bgG = parseInt(bgColor.slice(3,5), 16);
+  var bgB = parseInt(bgColor.slice(5,7), 16);
 
-  const spp = samples.length / w;
-  for (let x = 0; x < w; x++) {
-    const start = Math.floor(x * spp);
-    const end = Math.min(Math.floor((x + 1) * spp), samples.length);
-    let min = 0, max = 0;
-    for (let j = start; j < end; j++) {
-      const v = samples[j];
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      var idx = (y * w + x) * 4;
+      pixels[idx] = bgR;
+      pixels[idx+1] = bgG;
+      pixels[idx+2] = bgB;
+      pixels[idx+3] = 255;
+    }
+  }
+
+  var waveR = parseInt(waveColor.slice(1,3), 16);
+  var waveG = parseInt(waveColor.slice(3,5), 16);
+  var waveB = parseInt(waveColor.slice(5,7), 16);
+
+  var spp = samples.length / w;
+  for (var x = 0; x < w; x++) {
+    var start = Math.floor(x * spp);
+    var end = Math.min(Math.floor((x + 1) * spp), samples.length);
+    var min = 0, max = 0;
+    for (var j = start; j < end; j++) {
+      var v = samples[j];
       if (v < min) min = v;
       if (v > max) max = v;
     }
-    const top = mid + min * (mid - 4);
-    const bottom = mid + max * (mid - 4);
-    ctx.fillStyle = waveColor;
-    ctx.fillRect(x, top, 1, Math.max(1, bottom - top));
+    var top = Math.round(mid + min * (mid - 4));
+    var bottom = Math.round(mid + max * (mid - 4));
+    for (var y = top; y <= bottom; y++) {
+      var idx = (y * w + x) * 4;
+      pixels[idx] = waveR;
+      pixels[idx+1] = waveG;
+      pixels[idx+2] = waveB;
+      pixels[idx+3] = 255;
+    }
   }
+
+  ctx.putImageData(imageData, 0, 0);
 
   ctx.strokeStyle = centerColor;
   ctx.lineWidth = 0.5;
@@ -1043,13 +950,47 @@ function drawWaveform(canvas, samples) {
   ctx.stroke();
 }
 
+var _waveformCanvases = [];
+
+function registerWaveform(canvas, samples) {
+  _waveformCanvases.push({ canvas: canvas, samples: samples });
+}
+
+function redrawWaveforms() {
+  for (var i = 0; i < _waveformCanvases.length; i++) {
+    drawWaveform(_waveformCanvases[i].canvas, _waveformCanvases[i].samples);
+  }
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function formatDuration(sec) {
+  var m = Math.floor(sec / 60);
+  var s = Math.floor(sec % 60);
+  return m > 0 ? m + '分' + s + '秒' : s + '秒';
+}
+
+function formatDurShort(sec) {
+  var m = Math.floor(sec / 60);
+  var s = Math.floor(sec % 60);
+  return m > 0 ? m + ':' + String(s).padStart(2, '0') : '0:' + String(s).padStart(2, '0');
+}
+
 function formatPlayTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
+  var m = Math.floor(sec / 60);
+  var s = Math.floor(sec % 60);
   return m + ':' + String(s).padStart(2, '0');
 }
 
-function clearResults() {
+function cleanupResults() {
+  for (var i = 0; i < results.length; i++) {
+    if (results[i].url) URL.revokeObjectURL(results[i].url);
+  }
+  _waveformCanvases = [];
   $('resultsList').innerHTML = '';
   $('resultsSection').classList.remove('show');
   stopPlay();
@@ -1074,22 +1015,22 @@ function stopPlay() {
 }
 
 function doPlay(index, btn) {
-  const seg = results[index];
+  var seg = results[index];
   if (!seg) return false;
   try {
     if (!pb.ctx) pb.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = pb.ctx;
+    var ctx = pb.ctx;
     if (ctx.state === 'suspended') ctx.resume();
 
-    const card = document.getElementById('result-' + index);
+    var card = document.getElementById('result-' + index);
     if (!card) return false;
 
-    const buffer = ctx.createBuffer(1, seg.samples.length, seg.sampleRate);
+    var buffer = ctx.createBuffer(1, seg.samples.length, seg.sampleRate);
     buffer.getChannelData(0).set(seg.samples);
-    const source = ctx.createBufferSource();
+    var source = ctx.createBufferSource();
     source.buffer = buffer;
     source.connect(ctx.destination);
-    const actualOffset = pb.offset;
+    var actualOffset = pb.offset;
     source.start(0, actualOffset);
 
     pb.source = source;
@@ -1111,20 +1052,19 @@ function doPlay(index, btn) {
     btn.classList.add('playing');
 
     if (pb.timerId) clearInterval(pb.timerId);
-    pb.timerId = setInterval(() => {
+    pb.timerId = setInterval(function() {
       if (!pb.playing || pb.paused || !pb.source) return;
-      const now = pb.offset + (ctx.currentTime - pb.startTime);
+      var now = pb.offset + (ctx.currentTime - pb.startTime);
       if (now >= pb.duration) {
         clearInterval(pb.timerId); pb.timerId = null;
         pbReset();
         return;
       }
-      const pct = (now / pb.duration) * 100;
-      pb.progFill.style.width = pct + '%';
+      pb.progFill.style.width = ((now / pb.duration) * 100) + '%';
       pb.progCur.textContent = formatPlayTime(now);
     }, 100);
 
-    source.onended = () => {
+    source.onended = function() {
       if (pb.source === source) {
         clearInterval(pb.timerId); pb.timerId = null;
         pbReset();
@@ -1138,40 +1078,33 @@ function doPlay(index, btn) {
   }
 }
 
-async function togglePlay(index, btn) {
-  const seg = results[index];
+function togglePlay(index, btn) {
+  var seg = results[index];
   if (!seg) return;
 
-  // Same button → toggle pause/resume
   if (pb.index === index && pb.btn === btn) {
     if (pb.playing && !pb.paused) {
-      // Pause
       if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
       pb.offset += pb.ctx.currentTime - pb.startTime;
       pb.paused = true;
       if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
       btn.innerHTML = '▶';
       btn.classList.remove('playing');
-      btn.classList.add('paused');
       return;
     } else if (pb.paused) {
-      // Resume
       doPlay(index, btn);
-      btn.classList.remove('paused');
       return;
     }
   }
 
-  // Different button → stop old, play new
   stopPlay();
   doPlay(index, btn);
 }
 
-// Download
 function downloadSegment(index) {
-  const seg = results[index];
+  var seg = results[index];
   if (!seg) return;
-  const a = document.createElement('a');
+  var a = document.createElement('a');
   a.href = seg.url;
   a.download = seg.name;
   document.body.appendChild(a);
@@ -1179,30 +1112,42 @@ function downloadSegment(index) {
   a.remove();
 }
 
-async function downloadAll() {
+function downloadAll() {
   if (!results.length) return;
 
   try {
-    const files = [];
-    for (const seg of results) {
-      const data = await seg.blob.arrayBuffer();
-      files.push({ name: seg.name, data });
+    var files = [];
+    for (var i = 0; i < results.length; i++) {
+      files.push({ name: results[i].name, data: results[i].data });
     }
 
-    const zip = await generateZIP(files);
-    const name = (segmenter ? segmenter.baseName : 'audio') + '_segments.zip';
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(zip);
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 60000);
-    addLog(`ZIP 包已下载: ${name} (${formatSize(zip.size)})`, 'success');
+    if (worker) {
+      var handler = function(e) {
+        if (e.data.type === 'zipdone') {
+          var zipData = e.data.zipData;
+          downloadBlob(zipData, baseName + '_segments.zip');
+          worker.removeEventListener('message', handler);
+        }
+      };
+      worker.addEventListener('message', handler);
+      worker.postMessage({ type: 'zip', files: files });
+    }
   } catch (err) {
-    addLog(`下载失败: ${err.message}`, 'error');
+    addLog('下载失败: ' + err.message, 'error');
     console.error(err);
   }
+}
+
+function downloadBlob(data, filename) {
+  var blob = new Blob([data], { type: 'application/zip' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function() { URL.revokeObjectURL(a.href); }, 60000);
+  addLog('ZIP 包已下载: ' + filename + ' (' + formatSize(blob.size) + ')', 'success');
 }
 </script>
 </body>
