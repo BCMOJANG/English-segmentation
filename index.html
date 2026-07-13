@@ -202,8 +202,16 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .result-card .waveform-wrap canvas { width: 100%; height: 100%; border-radius: 4px; display: block; }
 
 .prog-row { display: flex; align-items: center; gap: 8px; width: 100%; order: 10; margin-top: 2px; }
-.prog-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; position: relative; min-width: 60px; }
-.prog-bar .prog-fill { height: 100%; background: var(--primary); border-radius: 3px; width: 0%; pointer-events: none; }
+.prog-bar {
+  flex: 1; height: 8px; background: var(--border); border-radius: 4px;
+  position: relative; min-width: 60px; cursor: pointer;
+  transition: height .15s, background .15s;
+}
+.prog-bar:hover { height: 10px; background: var(--text2); }
+.prog-bar .prog-fill {
+  height: 100%; background: var(--primary); border-radius: 4px; width: 0%;
+  pointer-events: none; transition: width .08s ease-out;
+}
 .prog-time { font-size: .72rem; color: var(--text2); font-variant-numeric: tabular-nums; min-width: 30px; }
 .prog-cur { text-align: right; }
 .prog-total { text-align: left; }
@@ -362,6 +370,7 @@ var WORKER_CODE = [
 'try{importScripts("https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js");hasMP3=typeof lamejs!=="undefined"}catch(e){}',
 'var cancelled=false;',
 'function pt(t,d){self.postMessage(Object.assign({type:t},d))}',
+'var _lp=0;function _sp(p){var n=Date.now();if(n-_lp<80&&p<100)return;_lp=n;pt("progress",{pct:p})}',
 'function a2dB(v){return 20*Math.log10(Math.max(v,1e-15))}',
 'function encWAV(samples,sampleRate){',
 'var len=samples.length,byteLen=len*2,buf=new ArrayBuffer(44+byteLen),v=new DataView(buf);',
@@ -437,15 +446,15 @@ var WORKER_CODE = [
 'if(msg.type==="process"){',
 'cancelled=false;var samples=new Float32Array(msg.audioData);var sr=msg.sampleRate;var ch=msg.channels;var bn=msg.baseName;var p=msg.params;',
 'var dur=samples.length/sr;var fs=Math.floor(sr*0.01);var fmt=p.format||"wav";',
-'pt("log",{msg:"音频: "+dur.toFixed(2)+"秒, 采样率: "+sr+"Hz, 格式: "+fmt.toUpperCase()});pt("progress",{pct:5});',
+'pt("log",{msg:"音频: "+dur.toFixed(2)+"秒, 采样率: "+sr+"Hz, 格式: "+fmt.toUpperCase()});_sp(5);',
 'var frames=anaFrames(samples,fs);if(!frames||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
-'pt("progress",{pct:20});',
+'_sp(20);',
 'var runs=findSilence(frames,fs,sr,p.minSilenceLen,p.silenceThresh,samples.length);',
 'if(!runs||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
-'pt("log",{msg:"检测到 "+runs.length+" 个静音段"});pt("progress",{pct:25});',
+'pt("log",{msg:"检测到 "+runs.length+" 个静音段"});_sp(25);',
 'if(runs.length===0)pt("log",{msg:"未检测到足够的静音段，请尝试降低阈值或减小最小静音长度",level:"warn"});',
 'var keep=Math.floor(sr*p.keepSilence/1000);var raw=extractSeg(samples,runs,keep);',
-'pt("log",{msg:"共 "+raw.length+" 个候选片段，正在编码..."});pt("progress",{pct:30});',
+'pt("log",{msg:"共 "+raw.length+" 个候选片段，正在编码..."});_sp(30);',
 'var minSeg=sr,res=[],ext=fmt==="mp3"?".mp3":".wav";',
 'for(var i=0;i<raw.length;i++){',
 'if(cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
@@ -455,8 +464,8 @@ var WORKER_CODE = [
 'if(fmt==="mp3"){data=encMP3(seg,sr);if(!data){pt("log",{msg:"MP3 编码失败，请检查网络连接或切换为 WAV 格式",level:"error"});pt("complete",{segments:[]});return}}',
 'else{data=encWAV(seg,sr);if(!data){pt("complete",{segments:[]});return}}',
 'res.push({index:i+1,name:segName,duration:segDur,size:data.byteLength,data:data,samples:seg.buffer});',
-'pt("log",{msg:"片段 "+(i+1)+": "+segName+" ("+segDur.toFixed(2)+"秒)"});pt("progress",{pct:Math.min(Math.round(pct),99)})}',
-'pt("progress",{pct:100});pt("log",{msg:"处理完成，共生成 "+res.length+" 个音频片段",level:"success"});pt("complete",{segments:res})}}'
+'pt("log",{msg:"片段 "+(i+1)+": "+segName+" ("+segDur.toFixed(2)+"秒)"});_sp(Math.min(Math.round(pct),99))}',
+'_sp(100);pt("log",{msg:"处理完成，共生成 "+res.length+" 个音频片段",level:"success"});var _tr=[];for(var _i=0;_i<res.length;_i++){_tr.push(res[_i].data);_tr.push(res[_i].samples)}self.postMessage({type:"complete",segments:res},_tr)}}'
 ].join('\n');
 
 // =========================================================================
@@ -467,6 +476,8 @@ var worker = null;
 var results = [];
 var isProcessing = false;
 var baseName = 'audio';
+var playbackPositions = {};
+var _decTimer = null;
 
 var pb = {
   ctx: null, index: -1, source: null, startTime: 0, offset: 0,
@@ -474,22 +485,82 @@ var pb = {
   progRow: null, progFill: null, progCur: null, progTotal: null, timerId: null
 };
 
+var dragState = {
+  active: false,
+  cardIndex: -1,
+  wasPlaying: false,
+  playBtn: null,
+  offset: 0,
+  duration: 0,
+  startX: 0,
+  startOffset: 0,
+  progBar: null,
+  progFill: null,
+  progCur: null,
+  barRect: null
+};
+
 function $(id) { return document.getElementById(id); }
 
 function initWorker() {
-  if (worker) { worker.terminate(); worker = null; }
+  if (worker) { try { worker.terminate(); } catch(e) {} worker = null; }
   try {
     var blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
     worker = new Worker(URL.createObjectURL(blob));
+    worker.onerror = function(e) {
+      addLog('Worker 内部错误: ' + (e.message || '未知错误'), 'error');
+      e.preventDefault();
+      isProcessing = false;
+      $('startBtn').disabled = false;
+      $('cancelBtn').disabled = true;
+      $('progressFill').classList.remove('active');
+      $('statusText').classList.remove('pulse');
+    };
+    worker.onmessageerror = function() {
+      addLog('Worker 消息传输失败（文件可能过大）', 'error');
+    };
   } catch (e) {
     addLog('无法创建 Web Worker，请使用更新版本的浏览器', 'error');
   }
 }
 
-  document.addEventListener('DOMContentLoaded', function() {
-  var theme = localStorage.getItem('theme') || 'light';
+function getPreferredTheme() {
+  var saved = localStorage.getItem('theme');
+  if (saved) return saved;
+  try {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq && mq.matches) return 'dark';
+  } catch(e) {}
+  return 'light';
+}
+
+function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   $('themeBtn').textContent = theme === 'dark' ? '🌙' : '☀️';
+  redrawWaveforms();
+}
+
+function setupTheme() {
+  applyTheme(getPreferredTheme());
+
+  // 监听系统主题变化（兼容 addListener / addEventListener）
+  try {
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var mqHandler = function(e) {
+      if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    };
+    if (mq.addEventListener) {
+      mq.addEventListener('change', mqHandler);
+    } else if (mq.addListener) {
+      mq.addListener(mqHandler);
+    }
+  } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  setupTheme();
 
   setupUpload();
   setupParams();
@@ -497,6 +568,11 @@ function initWorker() {
   $('startBtn').addEventListener('click', startProcessing);
   $('cancelBtn').addEventListener('click', cancelProcessing);
   $('downloadAllBtn').addEventListener('click', downloadAll);
+
+  // 全局指针事件：用于进度条拖动
+  document.addEventListener('pointermove', onPointerMove);
+  document.addEventListener('pointerup', onPointerUp);
+  document.addEventListener('pointercancel', onPointerUp);
 
   document.addEventListener('keydown', function(e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
@@ -523,18 +599,15 @@ function toggleTheme(e) {
   document.documentElement.style.setProperty('--click-y', y + 'px');
   var current = document.documentElement.getAttribute('data-theme');
   var next = current === 'dark' ? 'light' : 'dark';
-  if (document.startViewTransition) {
-    document.startViewTransition(function() {
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      $('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
-      redrawWaveforms();
-    });
-  } else {
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-    $('themeBtn').textContent = next === 'dark' ? '🌙' : '☀️';
-    redrawWaveforms();
+  localStorage.setItem('theme', next);
+  try {
+    if (document.startViewTransition) {
+      document.startViewTransition(function() { applyTheme(next); });
+    } else {
+      applyTheme(next);
+    }
+  } catch(e) {
+    applyTheme(next);
   }
 }
 
@@ -582,54 +655,25 @@ function handleFile(file) {
     return;
   }
 
+  if (file.size > 500 * 1024 * 1024) {
+    addLog('文件超过500MB，建议使用桌面版处理', 'error');
+    return;
+  }
+
   stopPlay();
   cleanupPrevious();
 
   $('fileInfo').classList.add('show');
   $('fileName').textContent = file.name;
   $('fileSize').textContent = formatSize(file.size);
-  $('fileDuration').textContent = '加载中...';
+  $('fileDuration').textContent = formatSize(file.size);
 
-  var reader = new FileReader();
-  reader.onerror = function() {
-    $('fileDuration').textContent = '读取失败';
-    addLog('文件读取失败', 'error');
-  };
-  reader.onload = function(evt) {
-    decodeAudio(evt.target.result, file.name);
-  };
-  reader.readAsArrayBuffer(file);
-}
+  $('paramsCard').classList.remove('hidden');
+  $('controlsCard').classList.remove('hidden');
+  $('startBtn').disabled = false;
 
-function decodeAudio(arrayBuffer, fileName) {
-  var ctx = new (window.AudioContext || window.webkitAudioContext)();
-  if (ctx.state === 'suspended') ctx.resume();
-
-  ctx.decodeAudioData(arrayBuffer, function(audioBuffer) {
-    var mono = mixToMono(audioBuffer);
-    var sampleRate = audioBuffer.sampleRate;
-    var duration = mono.length / sampleRate;
-    var channels = audioBuffer.numberOfChannels;
-    baseName = fileName.replace(/\.[^/.]+$/, '');
-
-    $('fileDuration').textContent = formatDuration(duration);
-    $('paramsCard').classList.remove('hidden');
-    $('controlsCard').classList.remove('hidden');
-    $('startBtn').disabled = false;
-
-    addLog('已加载: ' + fileName + ' (' + formatDuration(duration) + ')', 'success');
-
-    initWorker();
-
-    window.__monoData = mono;
-    window.__sampleRate = sampleRate;
-
-    ctx.close();
-  }, function(err) {
-    $('fileDuration').textContent = '解码失败';
-    addLog('解码失败，浏览器不支持此音频格式' + (err ? ': ' + err : ''), 'error');
-    ctx.close();
-  });
+  window.__pendingFile = file;
+  addLog('已选择: ' + file.name + ' (' + formatSize(file.size) + ')', 'success');
 }
 
 function mixToMono(buf) {
@@ -652,9 +696,10 @@ function mixToMono(buf) {
 }
 
 function cleanupPrevious() {
-  if (window.__monoData) window.__monoData = null;
+  window.__pendingFile = null;
   results.forEach(function(r) { if (r.url) URL.revokeObjectURL(r.url); });
   results = [];
+  playbackPositions = {};
   if (worker) { worker.terminate(); worker = null; }
   isProcessing = false;
   _waveformCanvases = [];
@@ -677,13 +722,10 @@ function removeFile() {
 
 function startProcessing() {
   if (isProcessing) return;
-  if (!window.__monoData) {
-    addLog('请先加载音频文件', 'error');
+  var file = window.__pendingFile;
+  if (!file) {
+    addLog('请先选择音频文件', 'error');
     return;
-  }
-  if (!worker) {
-    initWorker();
-    if (!worker) { addLog('Worker 初始化失败', 'error'); return; }
   }
 
   isProcessing = true;
@@ -696,7 +738,7 @@ function startProcessing() {
   $('resultsSection').classList.remove('show');
   $('progressFill').style.width = '0%';
   $('progressFill').classList.add('active');
-  $('statusText').textContent = '正在处理...';
+  $('statusText').textContent = '正在读取文件...';
   $('statusText').classList.add('pulse');
   clearLog();
 
@@ -710,66 +752,127 @@ function startProcessing() {
   var startTime = Date.now();
   addLog('参数: 静音长度=' + params.minSilenceLen + 'ms, 阈值=' + params.silenceThresh + 'dB, 保留=' + params.keepSilence + 'ms, 格式=' + params.format.toUpperCase());
 
-  var mono = window.__monoData;
-  var sampleRate = window.__sampleRate || 44100;
+  if (!worker) { initWorker(); if (!worker) { addLog('Worker 初始化失败', 'error'); resetProcessing(); return; } }
 
-  worker.addEventListener('message', function handler(e) {
-    var msg = e.data;
-    switch (msg.type) {
-      case 'progress':
-        $('progressFill').style.width = (msg.pct || 0) + '%';
-        break;
-      case 'log':
-        addLog(msg.msg, msg.level);
-        break;
-      case 'complete':
-        worker.removeEventListener('message', handler);
-        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        isProcessing = false;
-        $('startBtn').disabled = false;
-        $('cancelBtn').disabled = true;
-        $('progressFill').classList.remove('active');
-        $('statusText').classList.remove('pulse');
+  var readPromise = typeof file.arrayBuffer === 'function'
+    ? file.arrayBuffer()
+    : new Promise(function(resolve, reject) {
+        var r = new FileReader();
+        r.onload = function(e) { resolve(e.target.result); };
+        r.onerror = function(e) { reject(e.target.error || '读取失败'); };
+        r.readAsArrayBuffer(file);
+      });
 
-        var segs = msg.segments || [];
-        if (segs.length === 0) {
-          $('statusText').textContent = '未生成片段';
-          if (!window.__monoData) addLog('请重新加载音频文件', 'warn');
-          return;
-        }
+  readPromise.then(function(buf) {
+    $('statusText').textContent = '正在解码音频 (' + formatSize(buf.byteLength) + ')...';
+    $('progressFill').style.width = '2%';
 
-        results = segs.map(function(seg) {
-          return {
-            index: seg.index,
-            name: seg.name,
-            duration: seg.duration,
-            size: seg.size,
-            samples: new Float32Array(seg.samples),
-            sampleRate: sampleRate,
-            data: seg.data,
-            url: URL.createObjectURL(new Blob([seg.data], { type: seg.name.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav' }))
-          };
-        });
+    // 解码占 ~67% 总耗时（20s），Worker 占 ~33%（10s），进度条按此比例分配
+    var _estSec = Math.max(0.5, buf.byteLength / (1024 * 1024) * 2.25);
+    var _decT0 = Date.now();
+    _decTimer = setInterval(function() {
+      var pct = (Date.now() - _decT0) / 1000 / _estSec;
+      if (pct >= 1) { $('progressFill').style.width = '67%'; clearInterval(_decTimer); _decTimer = null; }
+      else { $('progressFill').style.width = (2 + pct * 65) + '%'; }
+    }, 100);
 
-        showResults(results);
-        $('statusText').textContent = '完成！共 ' + results.length + ' 个片段（耗时 ' + elapsed + ' 秒）';
-        addLog('实际耗时 ' + elapsed + ' 秒', 'success');
-        break;
+    if (!pb.ctx) pb.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = pb.ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    try {
+      ctx.decodeAudioData(buf, function(audioBuffer) {
+        clearInterval(_decTimer);
+        $('progressFill').style.width = '67%';
+
+        var sampleRate = audioBuffer.sampleRate;
+        baseName = file.name.replace(/\.[^/.]+$/, '');
+
+        $('statusText').textContent = '正在混合声道...';
+        var mono = mixToMono(audioBuffer);
+
+        addLog('已加载: ' + file.name + ' (' + formatDuration(audioBuffer.length / sampleRate) + ')', 'success');
+
+        // Setup worker handler（Worker 进度 0-100% 映射到 70-100%）
+        var handler = function(e) {
+          var msg = e.data;
+          switch (msg.type) {
+            case 'progress':
+              $('progressFill').style.width = (67 + (msg.pct || 0) * 0.33) + '%';
+              break;
+            case 'log':
+              addLog(msg.msg, msg.level);
+              break;
+            case 'complete':
+              worker.removeEventListener('message', handler);
+              $('progressFill').style.width = '100%';
+              var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+              isProcessing = false;
+              $('startBtn').disabled = false;
+              $('cancelBtn').disabled = true;
+              $('progressFill').classList.remove('active');
+              $('statusText').classList.remove('pulse');
+
+              var segs = msg.segments || [];
+              if (segs.length === 0) {
+                $('statusText').textContent = '未生成片段';
+                return;
+              }
+
+              results = segs.map(function(seg) {
+                var url = URL.createObjectURL(new Blob([seg.data], { type: seg.name.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav' }));
+                return {
+                  index: seg.index, name: seg.name, duration: seg.duration, size: seg.size,
+                  samples: new Float32Array(seg.samples), sampleRate: sampleRate,
+                  data: seg.data, url: url, offset: 0
+                };
+              });
+
+              showResults(results);
+              $('statusText').textContent = '完成！共 ' + results.length + ' 个片段（耗时 ' + elapsed + ' 秒）';
+              addLog('实际耗时 ' + elapsed + ' 秒', 'success');
+              break;
+          }
+        };
+        worker.addEventListener('message', handler);
+
+        $('statusText').textContent = '正在处理...';
+        worker.postMessage({ type: 'process', audioData: mono.buffer, sampleRate: sampleRate, channels: 1, baseName: baseName, params: params }, [mono.buffer]);
+
+      }, function(err) {
+        clearInterval(_decTimer);
+        resetProcessing();
+        var msg = '解码失败，浏览器不支持此音频格式';
+        if (err) { msg += ' (' + (err.message || err) + ')'; console.error('decodeAudioData error:', err); }
+        msg += '。可尝试转换为 WAV/MP3 格式后重试';
+        addLog(msg, 'error');
+      });
+    } catch (err) {
+      clearInterval(_decTimer);
+      resetProcessing();
+      addLog('解码异常：' + (err.message || err), 'error');
     }
+  }).catch(function(err) {
+    resetProcessing();
+    addLog('文件读取失败: ' + (err && err.message ? err.message : err), 'error');
   });
+}
 
-  var audioData = mono.buffer.slice(0);
-  worker.postMessage({ type: 'process', audioData: audioData, sampleRate: sampleRate, channels: 1, baseName: baseName, params: params }, [audioData]);
+function resetProcessing() {
+  if (_decTimer) { clearInterval(_decTimer); _decTimer = null; }
+  isProcessing = false;
+  $('startBtn').disabled = false;
+  $('cancelBtn').disabled = true;
+  $('progressFill').classList.remove('active');
+  $('statusText').classList.remove('pulse');
 }
 
 function cancelProcessing() {
   if (worker) {
     worker.postMessage({ type: 'cancel' });
-    addLog('正在取消...', 'warn');
   }
-  $('cancelBtn').disabled = true;
-  $('progressFill').classList.remove('active');
-  $('statusText').classList.remove('pulse');
+  addLog('已取消', 'warn');
+  resetProcessing();
 }
 
 function addLog(msg, level) {
@@ -857,6 +960,14 @@ function showResults(segments) {
     progRow.appendChild(progBar);
     progRow.appendChild(timeTotal);
 
+    // 绑定进度条拖动事件
+    (function(idx, bar, fill, cur) {
+      bar.addEventListener('pointerdown', function(e) {
+        e.preventDefault();
+        startDrag(idx, e, bar, fill, cur);
+      });
+    })(i, progBar, progFill, timeCur);
+
     card.appendChild(idxDiv);
     card.appendChild(waveWrap);
     card.appendChild(info);
@@ -864,9 +975,26 @@ function showResults(segments) {
     card.appendChild(progRow);
     list.appendChild(card);
 
-    drawWaveform(canvas, seg.samples);
-    registerWaveform(canvas, seg.samples);
+    // 收集波形数据，延迟渲染
+    var _wfData = _wfData || [];
+    _wfData.push({canvas: canvas, samples: seg.samples});
   }
+
+  // 分批渲染波形：首帧3个，后续每帧3个，避免阻塞UI
+  var _renderIdx = 0;
+  function _renderBatch() {
+    var count = 0;
+    while (_renderIdx < _wfData.length && count < (_renderIdx === 0 ? 3 : 3)) {
+      var d = _wfData[_renderIdx++];
+      drawWaveform(d.canvas, d.samples);
+      registerWaveform(d.canvas, d.samples);
+      count++;
+    }
+    if (_renderIdx < _wfData.length) {
+      requestAnimationFrame(_renderBatch);
+    }
+  }
+  requestAnimationFrame(_renderBatch);
 
   setTimeout(function() {
     var first = $('result-0');
@@ -886,6 +1014,268 @@ function makePlayHandler(i, btn) {
 
 function makeDownloadHandler(i) {
   return function() { downloadSegment(i); };
+}
+
+// ============================================================
+//  进度条拖动核心逻辑
+// ============================================================
+
+function startDrag(index, e, progBar, progFill, progCur) {
+  var seg = results[index];
+  if (!seg) return;
+
+  var rect = progBar.getBoundingClientRect();
+  var x = (e.clientX - rect.left) / rect.width;
+  x = Math.max(0, Math.min(1, x));
+  var newOffset = x * seg.duration;
+
+  // 如果当前正在播放同一卡片，暂停播放
+  if (pb.playing && pb.index === index) {
+    dragState.wasPlaying = true;
+    dragState.playBtn = pb.btn;
+    if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
+    if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
+    pb.playing = false;
+    pb.paused = true;
+    if (pb.btn) {
+      pb.btn.innerHTML = '▶';
+      pb.btn.classList.remove('playing');
+    }
+  } else if (pb.playing) {
+    stopPlay();
+    dragState.wasPlaying = false;
+  } else {
+    dragState.wasPlaying = false;
+  }
+
+  // 更新进度显示
+  progFill.style.width = (x * 100) + '%';
+  progCur.textContent = formatPlayTime(newOffset);
+
+  // 显示进度条行
+  var progRow = progBar.parentElement;
+  if (progRow) progRow.style.display = 'flex';
+
+  // 缓存 DOM 引用和 rect，避免 onPointerMove 中重复查询
+  dragState.progBar = progBar;
+  dragState.progFill = progFill;
+  dragState.progCur = progCur;
+  dragState.barRect = rect;
+
+  // 设置拖动状态
+  dragState.active = true;
+  dragState.cardIndex = index;
+  dragState.offset = newOffset;
+  dragState.duration = seg.duration;
+  dragState.startX = e.clientX;
+  dragState.startOffset = newOffset;
+
+  playbackPositions[index] = newOffset;
+
+  if (dragState.wasPlaying) {
+    pb.offset = newOffset;
+  }
+}
+
+function onPointerMove(e) {
+  if (!dragState.active) return;
+  var rect = dragState.barRect;
+  var progFill = dragState.progFill;
+  var progCur = dragState.progCur;
+  if (!rect || !progFill || !progCur) return;
+
+  var x = (e.clientX - rect.left) / rect.width;
+  x = Math.max(0, Math.min(1, x));
+  var newOffset = x * dragState.duration;
+
+  progFill.style.width = (x * 100) + '%';
+  progCur.textContent = formatPlayTime(newOffset);
+  dragState.offset = newOffset;
+
+  var index = dragState.cardIndex;
+  playbackPositions[index] = newOffset;
+  if (pb.index === index) {
+    pb.offset = newOffset;
+  }
+}
+
+function onPointerUp(e) {
+  if (!dragState.active) return;
+
+  var index = dragState.cardIndex;
+  var newOffset = dragState.offset;
+  dragState.progBar = dragState.progFill = dragState.progCur = null;
+  dragState.barRect = null;
+
+  // 如果之前正在播放，从新位置继续播放
+  if (dragState.wasPlaying) {
+    // 确保 pb.offset 是最新位置
+    pb.offset = newOffset;
+    // 如果播放按钮还存在，重新播放
+    if (dragState.playBtn) {
+      doPlay(index, dragState.playBtn);
+    } else {
+      // 降级：尝试找到播放按钮
+      var card = document.getElementById('result-' + index);
+      if (card) {
+        var btn = card.querySelector('.play-btn');
+        if (btn) doPlay(index, btn);
+      }
+    }
+  }
+
+  dragState.active = false;
+  dragState.wasPlaying = false;
+  dragState.playBtn = null;
+}
+
+// ============================================================
+//  播放控制
+// ============================================================
+
+function doPlay(index, btn) {
+  var seg = results[index];
+  if (!seg) return false;
+  try {
+    if (!pb.ctx) pb.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var ctx = pb.ctx;
+    if (ctx.state === 'suspended') ctx.resume();
+
+    var card = document.getElementById('result-' + index);
+    if (!card) return false;
+
+    // 从 playbackPositions 读取起始位置
+    var offset = playbackPositions[index] || 0;
+    if (offset >= seg.duration) {
+      offset = 0;
+      playbackPositions[index] = 0;
+    }
+
+    var buffer = ctx.createBuffer(1, seg.samples.length, seg.sampleRate);
+    buffer.getChannelData(0).set(seg.samples);
+    var source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(ctx.destination);
+
+    pb.source = source;
+    pb.startTime = ctx.currentTime;
+    pb.offset = offset;
+    pb.duration = seg.duration;
+    pb.playing = true;
+    pb.paused = false;
+    pb.index = index;
+    pb.btn = btn;
+
+    // 进度条 UI
+    pb.progRow = card.querySelector('.prog-row');
+    pb.progFill = card.querySelector('.prog-fill');
+    pb.progCur = card.querySelector('.prog-cur');
+    pb.progTotal = card.querySelector('.prog-total');
+    if (pb.progRow) pb.progRow.style.display = 'flex';
+    if (pb.progCur) pb.progCur.textContent = formatPlayTime(offset);
+    if (pb.progTotal) pb.progTotal.textContent = formatPlayTime(seg.duration);
+
+    btn.innerHTML = '⏸';
+    btn.classList.add('playing');
+
+    source.start(0, offset);
+
+    if (pb.timerId) clearInterval(pb.timerId);
+    pb.timerId = setInterval(function() {
+      if (!pb.playing || pb.paused || !pb.source) return;
+      var now = pb.offset + (ctx.currentTime - pb.startTime);
+      if (now >= pb.duration) {
+        clearInterval(pb.timerId); pb.timerId = null;
+        // 播放结束，重置状态
+        if (pb.progFill) pb.progFill.style.width = '100%';
+        if (pb.progCur) pb.progCur.textContent = formatPlayTime(pb.duration);
+        playbackPositions[pb.index] = pb.duration;
+        pbReset();
+        return;
+      }
+      if (pb.progFill) pb.progFill.style.width = ((now / pb.duration) * 100) + '%';
+      if (pb.progCur) pb.progCur.textContent = formatPlayTime(now);
+      playbackPositions[pb.index] = now;
+    }, 100);
+
+    source.onended = function() {
+      if (pb.source === source) {
+        clearInterval(pb.timerId); pb.timerId = null;
+        if (pb.progFill) pb.progFill.style.width = '100%';
+        if (pb.progCur) pb.progCur.textContent = formatPlayTime(pb.duration);
+        playbackPositions[pb.index] = pb.duration;
+        pbReset();
+      }
+    };
+
+    return true;
+  } catch (err) {
+    addLog('播放失败: ' + err.message, 'error');
+    return false;
+  }
+}
+
+function togglePlay(index, btn) {
+  var seg = results[index];
+  if (!seg) return;
+
+  if (pb.index === index && pb.btn === btn) {
+    if (pb.playing && !pb.paused) {
+      // 暂停
+      if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
+      pb.offset += pb.ctx.currentTime - pb.startTime;
+      pb.paused = true;
+      if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
+      // 保存当前位置
+      playbackPositions[index] = pb.offset;
+      btn.innerHTML = '▶';
+      btn.classList.remove('playing');
+      return;
+    } else if (pb.paused) {
+      // 恢复播放
+      doPlay(index, btn);
+      return;
+    }
+  }
+
+  stopPlay();
+  doPlay(index, btn);
+}
+
+function stopPlay() {
+  if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
+  if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
+  // 保存当前播放位置
+  if (pb.index >= 0 && results[pb.index]) {
+    playbackPositions[pb.index] = pb.offset;
+  }
+  if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
+  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); pb.btn = null; }
+  pb.playing = false;
+  pb.paused = false;
+  pb.offset = 0;
+  pb.index = -1;
+  pb.source = null;
+  pb.progFill = null;
+  pb.progCur = null;
+  pb.progTotal = null;
+}
+
+function pbReset() {
+  if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
+  if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
+  if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
+  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); pb.btn = null; }
+  pb.source = null;
+  pb.btn = null;
+  pb.progRow = null;
+  pb.progFill = null;
+  pb.progCur = null;
+  pb.progTotal = null;
+  pb.index = -1;
+  pb.playing = false;
+  pb.paused = false;
+  pb.offset = 0;
 }
 
 function drawWaveform(canvas, samples) {
@@ -994,111 +1384,6 @@ function cleanupResults() {
   $('resultsList').innerHTML = '';
   $('resultsSection').classList.remove('show');
   stopPlay();
-}
-
-function pbReset() {
-  if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
-  if (pb.source) { try { pb.source.stop(); } catch(e) {} }
-  if (pb.progRow) { pb.progRow.style.display = 'none'; }
-  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); }
-  pb.source = null; pb.btn = null; pb.progRow = null; pb.progFill = null;
-  pb.progCur = null; pb.progTotal = null; pb.index = -1;
-  pb.playing = false; pb.paused = false; pb.offset = 0;
-}
-
-function stopPlay() {
-  if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
-  if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
-  if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
-  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); pb.btn = null; }
-  pb.playing = false; pb.paused = false; pb.offset = 0; pb.index = -1;
-}
-
-function doPlay(index, btn) {
-  var seg = results[index];
-  if (!seg) return false;
-  try {
-    if (!pb.ctx) pb.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    var ctx = pb.ctx;
-    if (ctx.state === 'suspended') ctx.resume();
-
-    var card = document.getElementById('result-' + index);
-    if (!card) return false;
-
-    var buffer = ctx.createBuffer(1, seg.samples.length, seg.sampleRate);
-    buffer.getChannelData(0).set(seg.samples);
-    var source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    var actualOffset = pb.offset;
-    source.start(0, actualOffset);
-
-    pb.source = source;
-    pb.startTime = ctx.currentTime;
-    pb.duration = seg.duration;
-    pb.playing = true;
-    pb.paused = false;
-    pb.index = index;
-    pb.btn = btn;
-    pb.progRow = card.querySelector('.prog-row');
-    pb.progFill = card.querySelector('.prog-fill');
-    pb.progCur = card.querySelector('.prog-cur');
-    pb.progTotal = card.querySelector('.prog-total');
-    pb.progRow.style.display = 'flex';
-    pb.progCur.textContent = formatPlayTime(actualOffset);
-    pb.progTotal.textContent = formatPlayTime(seg.duration);
-
-    btn.innerHTML = '⏸';
-    btn.classList.add('playing');
-
-    if (pb.timerId) clearInterval(pb.timerId);
-    pb.timerId = setInterval(function() {
-      if (!pb.playing || pb.paused || !pb.source) return;
-      var now = pb.offset + (ctx.currentTime - pb.startTime);
-      if (now >= pb.duration) {
-        clearInterval(pb.timerId); pb.timerId = null;
-        pbReset();
-        return;
-      }
-      pb.progFill.style.width = ((now / pb.duration) * 100) + '%';
-      pb.progCur.textContent = formatPlayTime(now);
-    }, 100);
-
-    source.onended = function() {
-      if (pb.source === source) {
-        clearInterval(pb.timerId); pb.timerId = null;
-        pbReset();
-      }
-    };
-
-    return true;
-  } catch (err) {
-    addLog('播放失败: ' + err.message, 'error');
-    return false;
-  }
-}
-
-function togglePlay(index, btn) {
-  var seg = results[index];
-  if (!seg) return;
-
-  if (pb.index === index && pb.btn === btn) {
-    if (pb.playing && !pb.paused) {
-      if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
-      pb.offset += pb.ctx.currentTime - pb.startTime;
-      pb.paused = true;
-      if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
-      btn.innerHTML = '▶';
-      btn.classList.remove('playing');
-      return;
-    } else if (pb.paused) {
-      doPlay(index, btn);
-      return;
-    }
-  }
-
-  stopPlay();
-  doPlay(index, btn);
 }
 
 function downloadSegment(index) {
