@@ -253,7 +253,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .update-banner .update-info { flex: 1; }
 .update-banner .update-info strong { color: var(--primary); }
 .update-banner .update-info .update-date { color: var(--text2); font-size: .78rem; margin-top: 2px; }
-.update-banner .update-link { color: var(--primary); text-decoration: none; font-weight: 500; white-space: nowrap; }
+.update-banner .update-link { color: var(--primary); text-decoration: none; font-weight: 500; white-space: nowrap; background: none; border: none; cursor: pointer; font-size: .85rem; font-family: inherit; padding: 0; }
 .update-banner .update-link:hover { text-decoration: underline; }
 .update-banner .close-btn {
   background: none; border: none; color: var(--text2); cursor: pointer;
@@ -488,8 +488,7 @@ var baseName = 'audio';
 var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
-var APP_VERSION = 'f010d86434da66fc41bf79dc1815bb8f62d1cd74';
-var APP_VERSION_STR = 'v2.0';
+var APP_VERSION_STR = 'v1.0';
 var UPDATE_DISMISS_KEY = 'update_dismiss';
 var UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000;
 
@@ -519,20 +518,35 @@ function $(id) { return document.getElementById(id); }
 function checkUpdate() {
   var dismissed = localStorage.getItem(UPDATE_DISMISS_KEY);
   if (dismissed && Date.now() - parseInt(dismissed, 10) < UPDATE_INTERVAL) return;
-  fetch('https://api.github.com/repos/BCMOJANG/English-segmentation/commits?per_page=1', { cache: 'no-cache' })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (!data || !data.length) return;
-      var latest = data[0];
-      if (latest.sha === APP_VERSION) return;
-      var date = new Date(latest.commit.author.date).toLocaleDateString('zh-CN');
-      var msg = latest.commit.message.split('\n')[0];
+  fetch('https://bcmojang.github.io/English-segmentation/version.txt', { cache: 'no-cache' })
+    .then(function(r) {
+      if (!r.ok) throw new Error();
+      return r.text();
+    })
+    .then(function(remoteVer) {
+      remoteVer = remoteVer.trim().replace(/^version\s*=\s*/i, '').trim();
+      if (remoteVer.replace(/^v/i, '') === APP_VERSION_STR.replace(/^v/i, '')) return;
       var banner = $('updateBanner');
       banner.innerHTML =
-        '<div class="update-info"><strong>📢 有新版本可用</strong><div class="update-date">' + date + ' · ' + escHtml(msg) + '</div></div>' +
-        '<a class="update-link" href="https://github.com/BCMOJANG/English-segmentation" target="_blank" rel="noopener">查看更新 →</a>' +
+        '<div class="update-info"><strong>📢 有新版本可用</strong><div class="update-date">GitHub: ' + escHtml(remoteVer) + ' · 本地: ' + escHtml(APP_VERSION_STR) + '</div></div>' +
+        '<button class="update-link" id="updateDownloadBtn">直接下载最新版 →</button>' +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.remove('hidden');
+      $('updateDownloadBtn').addEventListener('click', function() {
+        fetch('https://raw.githubusercontent.com/BCMOJANG/English-segmentation/main/index.html')
+          .then(function(r) { return r.text(); })
+          .then(function(html) {
+            var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = '音频分割工具.html';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+          });
+      });
       $('updateCloseBtn').addEventListener('click', function() {
         banner.classList.add('hidden');
         localStorage.setItem(UPDATE_DISMISS_KEY, String(Date.now()));
