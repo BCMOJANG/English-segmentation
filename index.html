@@ -489,8 +489,6 @@ var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
 var APP_VERSION_STR = 'v1.0';
-var UPDATE_DISMISS_KEY = 'update_dismiss';
-var UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000;
 
 var pb = {
   ctx: null, index: -1, source: null, startTime: 0, offset: 0,
@@ -516,15 +514,14 @@ var dragState = {
 function $(id) { return document.getElementById(id); }
 
 function checkUpdate() {
-  var dismissed = localStorage.getItem(UPDATE_DISMISS_KEY);
-  if (dismissed && Date.now() - parseInt(dismissed, 10) < UPDATE_INTERVAL) return;
-  fetch('https://bcmojang.github.io/English-segmentation/version.txt', { cache: 'no-cache' })
+  fetch('https://api.github.com/repos/BCMOJANG/English-segmentation/contents/version.txt', { cache: 'no-cache' })
     .then(function(r) {
-      if (!r.ok) throw new Error();
-      return r.text();
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
     })
-    .then(function(remoteVer) {
-      remoteVer = remoteVer.trim().replace(/^version\s*=\s*/i, '').trim();
+    .then(function(data) {
+      if (!data.content) throw new Error('no content');
+      var remoteVer = atob(data.content).trim().replace(/^version\s*=\s*/i, '').trim();
       if (remoteVer.replace(/^v/i, '') === APP_VERSION_STR.replace(/^v/i, '')) return;
       var banner = $('updateBanner');
       banner.innerHTML =
@@ -533,7 +530,7 @@ function checkUpdate() {
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.remove('hidden');
       $('updateDownloadBtn').addEventListener('click', function() {
-        fetch('https://raw.githubusercontent.com/BCMOJANG/English-segmentation/main/index.html')
+        fetch('https://raw.githubusercontent.com/BCMOJANG/English-segmentation/main/index.html', { cache: 'no-cache' })
           .then(function(r) { return r.text(); })
           .then(function(html) {
             var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
@@ -549,10 +546,11 @@ function checkUpdate() {
       });
       $('updateCloseBtn').addEventListener('click', function() {
         banner.classList.add('hidden');
-        localStorage.setItem(UPDATE_DISMISS_KEY, String(Date.now()));
       });
     })
-    .catch(function() {});
+    .catch(function(err) {
+      addLog('检查更新失败: ' + (err && err.message ? err.message : err), 'error');
+    });
 }
 
 function setProgress(pct) {
