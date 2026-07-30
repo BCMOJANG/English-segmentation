@@ -41,7 +41,9 @@ html { font-size: 16px; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
   background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5;
+  scrollbar-gutter: stable;
   transition: background .3s, color .3s;
+  -webkit-user-select: none; user-select: none;
 }
 
 .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
@@ -152,6 +154,10 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse { 50% { opacity: .6; } }
+@keyframes curtainDown {
+  from { clip-path: inset(0 0 100% 0); opacity: 0; transform: translateY(-8px); }
+  to   { clip-path: inset(0);          opacity: 1; transform: translateY(0);    }
+}
 .log-box .log-warn { color: #ff9500; }
 .log-box .log-error { color: var(--danger); }
 .log-box .log-success { color: var(--success); }
@@ -184,6 +190,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   font-weight: 700; font-size: .85rem; flex-shrink: 0;
 }
 .result-card .info { flex: 1; min-width: 0; }
+.result-card .info { -webkit-user-select: text; user-select: text; }
 .result-card .info .name { font-weight: 500; font-size: .9rem; word-break: break-all; }
 .result-card .info .duration { font-size: .78rem; color: var(--text2); margin-top: 2px; }
 .result-card .actions { display: flex; gap: 6px; flex-shrink: 0; }
@@ -244,11 +251,20 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 }
 
 .update-banner {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 10px 16px; margin-bottom: 16px;
-  background: var(--primary-light); border: 1px solid var(--primary);
-  border-radius: var(--radius-sm); font-size: .85rem;
-  animation: fadeUp .35s ease-out both;
+  display: grid; grid-template-rows: 0fr; overflow: hidden; opacity: 0;
+  margin-bottom: 0; border: 1px solid var(--primary); border-width: 0;
+  background: var(--primary-light); border-radius: var(--radius-sm); font-size: .85rem;
+  transition: grid-template-rows .5s ease-out, opacity .45s ease-out, margin-bottom .5s ease-out, border-width .45s ease-out;
+}
+.update-banner-inner {
+  min-height: 0; overflow: hidden; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 0 16px;
+}
+.update-banner.show {
+  grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; border-width: 1px;
+}
+.update-banner.show .update-banner-inner {
+  padding: 10px 16px; animation: curtainDown .45s ease-out both;
 }
 .update-banner .update-info { flex: 1; }
 .update-banner .update-info strong { color: var(--primary); }
@@ -262,7 +278,6 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 }
 .update-banner .close-btn:hover { background: var(--border); color: var(--text); }
 .hidden { display: none !important; }
-
 @media (max-width: 640px) {
   .container { padding: 16px 12px 40px; }
   .card { padding: 16px; }
@@ -281,7 +296,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   <h1>音频分割</h1>
   <button class="theme-btn" id="themeBtn" title="切换主题">☀️</button>
 </header>
-<div id="updateBanner" class="update-banner hidden"></div>
+<div id="updateBanner" class="update-banner"><div class="update-banner-inner"></div></div>
 
 <div class="main-row">
   <div class="col-left">
@@ -376,7 +391,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
     <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/><path d="M8 12l4 4 4-4-1.5-1.5L13 12.5V8h-2v4.5l-1.5-1.5L8 12z"/></svg>
     离线版
   </button>
-  <span class="version-badge" id="versionBadge"></span>
+   <span class="version-badge" id="versionBadge"></span>
 </footer>
 
 </div>
@@ -488,7 +503,7 @@ var baseName = 'audio';
 var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
-var APP_VERSION_STR = 'v1.0';
+var APP_VERSION_STR = 'v1.2';
 
 var pb = {
   ctx: null, index: -1, source: null, startTime: 0, offset: 0,
@@ -513,22 +528,61 @@ var dragState = {
 
 function $(id) { return document.getElementById(id); }
 
+function cmpVer(a, b) {
+  var pa = a.replace(/^v/i, '').split('.');
+  var pb = b.replace(/^v/i, '').split('.');
+  for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+    var na = parseInt(pa[i] || '0');
+    var nb = parseInt(pb[i] || '0');
+    if (na > nb) return 1;
+    if (na < nb) return -1;
+  }
+  return 0;
+}
+
+function showUpdat(text) {
+  if (!text) return;
+  var banner = $('updateBanner');
+  var inner = banner.querySelector('.update-banner-inner');
+  inner.innerHTML =
+    '<div class="update-info"><strong>📢 更新内容</strong>' +
+    '<div style="margin-top:6px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">' + escHtml(text) + '</div></div>' +
+    '<button class="close-btn" id="updateCloseBtn">&times;</button>';
+  banner.classList.add('show');
+  $('updateCloseBtn').addEventListener('click', function() {
+    banner.classList.remove('show');
+  });
+}
+
 function checkUpdate() {
-  fetch('https://bcmojang.github.io/English-segmentation/version.txt', { cache: 'no-cache' })
-    .then(function(r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r.text();
-    })
-    .then(function(text) {
+  Promise.all([
+    fetch('https://bcmojang.github.io/English-segmentation/update.txt', { cache: 'no-cache' })
+      .then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
+      .catch(function() { return ''; }),
+    fetch('https://bcmojang.github.io/English-segmentation/version.txt', { cache: 'no-cache' })
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+  ])
+    .then(function(results) {
+      var updatText = results[0];
+      var text = results[1];
       var remoteVer = text.trim().replace(/^version\s*=\s*/i, '').trim();
-      if (remoteVer.replace(/^v/i, '') === APP_VERSION_STR.replace(/^v/i, '')) return;
+      if (cmpVer(remoteVer, APP_VERSION_STR) <= 0) {
+        if (updatText) showUpdat(updatText);
+        return;
+      }
       var banner = $('updateBanner');
-      banner.innerHTML =
-        '<div class="update-info"><strong>📢 有新版本可用</strong><div class="update-date">GitHub: ' + escHtml(remoteVer) + ' · 本地: ' + escHtml(APP_VERSION_STR) + '</div></div>' +
+      var inner = banner.querySelector('.update-banner-inner');
+      var updatHtml = updatText ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.82rem;line-height:1.6;white-space:pre-wrap">' + escHtml(updatText) + '</div>' : '';
+      inner.innerHTML =
+        '<div class="update-info"><strong>📢 有新版本可用 (' + escHtml(remoteVer) + ')</strong>' +
+        '<div style="margin-top:4px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">本地版本: ' + escHtml(APP_VERSION_STR) + '</div>' + updatHtml + '</div>' +
         '<button class="update-link" id="updateDownloadBtn">直接下载最新版 →</button>' +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
-      banner.classList.remove('hidden');
+      banner.classList.add('show');
       $('updateDownloadBtn').addEventListener('click', function() {
+        var btn = this;
+        btn.textContent = '⏳ 下载中...';
+        btn.disabled = true;
         fetch('https://raw.githubusercontent.com/BCMOJANG/English-segmentation/main/index.html', { cache: 'no-cache' })
           .then(function(r) { return r.text(); })
           .then(function(html) {
@@ -541,10 +595,17 @@ function checkUpdate() {
             a.click();
             a.remove();
             setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+            btn.textContent = '直接下载最新版 →';
+            btn.disabled = false;
+          })
+          .catch(function() {
+            btn.textContent = '直接下载最新版 →';
+            btn.disabled = false;
+            addLog('下载失败，请稍后重试', 'error');
           });
       });
       $('updateCloseBtn').addEventListener('click', function() {
-        banner.classList.add('hidden');
+        banner.classList.remove('show');
       });
     })
     .catch(function(err) {
@@ -618,6 +679,7 @@ document.addEventListener('DOMContentLoaded', function() {
   setupTheme();
   checkUpdate();
   $('versionBadge').textContent = APP_VERSION_STR;
+  document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
   setupUpload();
   setupParams();
@@ -626,7 +688,6 @@ document.addEventListener('DOMContentLoaded', function() {
   $('cancelBtn').addEventListener('click', cancelProcessing);
   $('downloadAllBtn').addEventListener('click', downloadAll);
   $('downloadHtmlBtn').addEventListener('click', downloadHtmlPage);
-
   // 全局指针事件：用于进度条拖动
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
