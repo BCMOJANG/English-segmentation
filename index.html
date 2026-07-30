@@ -540,7 +540,7 @@ function cmpVer(a, b) {
   return 0;
 }
 
-function showUpdat(text) {
+function showUpdat(text, ver) {
   if (!text) return;
   var banner = $('updateBanner');
   var inner = banner.querySelector('.update-banner-inner');
@@ -551,6 +551,7 @@ function showUpdat(text) {
   banner.classList.add('show');
   $('updateCloseBtn').addEventListener('click', function() {
     banner.classList.remove('show');
+    if (ver) localStorage.setItem('dismissedVersion', ver);
   });
 }
 
@@ -566,8 +567,9 @@ function checkUpdate() {
       var updatText = results[0];
       var text = results[1];
       var remoteVer = text.trim().replace(/^version\s*=\s*/i, '').trim();
+      if (localStorage.getItem('dismissedVersion') === remoteVer) return;
       if (cmpVer(remoteVer, APP_VERSION_STR) <= 0) {
-        if (updatText) showUpdat(updatText);
+        if (updatText) showUpdat(updatText, remoteVer);
         return;
       }
       var banner = $('updateBanner');
@@ -606,6 +608,7 @@ function checkUpdate() {
       });
       $('updateCloseBtn').addEventListener('click', function() {
         banner.classList.remove('show');
+        localStorage.setItem('dismissedVersion', remoteVer);
       });
     })
     .catch(function(err) {
