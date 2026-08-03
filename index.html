@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>音频分割工具</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23007bff' d='M4 12a8 8 0 1 1 16 0h-1a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5a10 10 0 0 0-20 0v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2z'/></svg>">
 <style>
 :root {
   --bg: #f5f5f7;
@@ -38,6 +38,7 @@
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; }
+html, body { touch-action: pan-y; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
   background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5;
@@ -294,7 +295,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 <div class="container">
 <header>
   <h1>音频分割</h1>
-  <button class="theme-btn" id="themeBtn" title="切换主题">☀️</button>
+  <button class="theme-btn" id="themeBtn" title="切换主题"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg></button>
 </header>
 <div id="updateBanner" class="update-banner"><div class="update-banner-inner"></div></div>
 
@@ -302,7 +303,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   <div class="col-left">
     <div class="card">
       <div class="upload-zone" id="uploadZone">
-        <div class="icon">🎵</div>
+        <div class="icon"><svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg></div>
         <div class="text">点击或拖拽音频文件到此处</div>
         <div class="hint">支持 WAV · MP3 · OGG · FLAC · M4A</div>
         <input type="file" id="fileInput" accept="audio/*">
@@ -345,8 +346,8 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 
     <div class="card hidden" id="controlsCard">
       <div class="controls">
-        <button class="btn btn-primary" id="startBtn">▶ 开始分割</button>
-        <button class="btn btn-danger" id="cancelBtn" disabled>■ 取消</button>
+        <button class="btn btn-primary" id="startBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg> 开始分割</button>
+        <button class="btn btn-danger" id="cancelBtn" disabled><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg> 取消</button>
       </div>
     </div>
   </div>
@@ -373,7 +374,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   </div>
   <div id="resultsList"></div>
   <div class="download-all-wrap" id="downloadAllWrap">
-    <button class="btn btn-success" id="downloadAllBtn">📦 下载全部 (ZIP)</button>
+    <button class="btn btn-success" id="downloadAllBtn"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg> 下载全部 (ZIP)</button>
   </div>
 </div>
 
@@ -496,6 +497,16 @@ var WORKER_CODE = [
 //  Main Application
 // =========================================================================
 
+(function() {
+  function block(e) { e.preventDefault(); }
+  document.addEventListener('gesturestart', block);
+  document.addEventListener('gesturechange', block);
+  document.addEventListener('gestureend', block);
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches.length > 1) e.preventDefault();
+  }, { passive: false });
+})();
+
 var worker = null;
 var results = [];
 var isProcessing = false;
@@ -503,7 +514,21 @@ var baseName = 'audio';
 var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
-var APP_VERSION_STR = 'v1.2';
+var APP_VERSION_STR = 'v1.3';
+
+var ICONS = {
+  play: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>',
+  dl: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  note: '<svg viewBox="0 0 24 24" width="56" height="56" fill="currentColor" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg>',
+  zip: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>',
+  mega: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10v4a1 1 0 0 0 1 1h3l4 5V4L7 9H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6"/></svg>',
+  spin: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
+};
 
 var pb = {
   ctx: null, index: -1, source: null, startTime: 0, offset: 0,
@@ -545,7 +570,7 @@ function showUpdat(text, ver) {
   var banner = $('updateBanner');
   var inner = banner.querySelector('.update-banner-inner');
   inner.innerHTML =
-    '<div class="update-info"><strong>📢 更新内容</strong>' +
+    '<div class="update-info"><strong>' + ICONS.mega + ' 更新内容</strong>' +
     '<div style="margin-top:6px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">' + escHtml(text) + '</div></div>' +
     '<button class="close-btn" id="updateCloseBtn">&times;</button>';
   banner.classList.add('show');
@@ -576,14 +601,14 @@ function checkUpdate() {
       var inner = banner.querySelector('.update-banner-inner');
       var updatHtml = updatText ? '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.82rem;line-height:1.6;white-space:pre-wrap">' + escHtml(updatText) + '</div>' : '';
       inner.innerHTML =
-        '<div class="update-info"><strong>📢 有新版本可用 (' + escHtml(remoteVer) + ')</strong>' +
+        '<div class="update-info"><strong>' + ICONS.mega + ' 有新版本可用 (' + escHtml(remoteVer) + ')</strong>' +
         '<div style="margin-top:4px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">本地版本: ' + escHtml(APP_VERSION_STR) + '</div>' + updatHtml + '</div>' +
         '<button class="update-link" id="updateDownloadBtn">直接下载最新版 →</button>' +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.add('show');
       $('updateDownloadBtn').addEventListener('click', function() {
         var btn = this;
-        btn.textContent = '⏳ 下载中...';
+        btn.innerHTML = ICONS.spin + ' 下载中...';
         btn.disabled = true;
         fetch('https://raw.githubusercontent.com/BCMOJANG/English-segmentation/main/index.html', { cache: 'no-cache' })
           .then(function(r) { return r.text(); })
@@ -613,6 +638,16 @@ function checkUpdate() {
     })
     .catch(function(err) {
       addLog('检查更新失败: ' + (err && err.message ? err.message : err), 'error');
+      var banner = $('updateBanner');
+      var inner = banner.querySelector('.update-banner-inner');
+      inner.innerHTML =
+        '<div class="update-info"><strong>' + ICONS.warn + ' 检查更新失败</strong>' +
+        '<div style="margin-top:4px;font-size:.78rem;color:var(--text2)">网络异常，请稍后重试</div></div>' +
+        '<button class="close-btn" id="updateCloseBtn">&times;</button>';
+      banner.classList.add('show');
+      $('updateCloseBtn').addEventListener('click', function() {
+        banner.classList.remove('show');
+      });
     });
 }
 
@@ -655,7 +690,7 @@ function getPreferredTheme() {
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  $('themeBtn').textContent = theme === 'dark' ? '🌙' : '☀️';
+  $('themeBtn').innerHTML = theme === 'dark' ? ICONS.moon : ICONS.sun;
   redrawWaveforms();
 }
 
@@ -1083,12 +1118,12 @@ function showResults(segments) {
 
     var playBtn = document.createElement('button');
     playBtn.className = 'play-btn';
-    playBtn.innerHTML = '▶';
+    playBtn.innerHTML = ICONS.play;
     playBtn.dataset.index = i;
     playBtn.addEventListener('click', makePlayHandler(i, playBtn));
 
     var dlBtn = document.createElement('button');
-    dlBtn.innerHTML = '⬇';
+    dlBtn.innerHTML = ICONS.dl;
     dlBtn.addEventListener('click', makeDownloadHandler(i));
 
     actions.appendChild(playBtn);
@@ -1197,7 +1232,7 @@ function startDrag(index, e, progBar, progFill, progCur) {
     pb.playing = false;
     pb.paused = true;
     if (pb.btn) {
-      pb.btn.innerHTML = '▶';
+      pb.btn.innerHTML = ICONS.play;
       pb.btn.classList.remove('playing');
     }
   } else if (pb.playing) {
@@ -1334,10 +1369,14 @@ function doPlay(index, btn) {
     if (pb.progCur) pb.progCur.textContent = formatPlayTime(offset);
     if (pb.progTotal) pb.progTotal.textContent = formatPlayTime(seg.duration);
 
-    btn.innerHTML = '⏸';
+    btn.innerHTML = ICONS.pause;
     btn.classList.add('playing');
 
     source.start(0, offset);
+
+    var cardRect = card.getBoundingClientRect();
+    var targetY = cardRect.top + window.scrollY - window.innerHeight * 0.4;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
 
     if (pb.timerId) clearInterval(pb.timerId);
     pb.timerId = setInterval(function() {
@@ -1387,7 +1426,7 @@ function togglePlay(index, btn) {
       if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
       // 保存当前位置
       playbackPositions[index] = pb.offset;
-      btn.innerHTML = '▶';
+      btn.innerHTML = ICONS.play;
       btn.classList.remove('playing');
       return;
     } else if (pb.paused) {
@@ -1409,7 +1448,7 @@ function stopPlay() {
     playbackPositions[pb.index] = pb.offset;
   }
   if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
-  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); pb.btn = null; }
+  if (pb.btn) { pb.btn.innerHTML = ICONS.play; pb.btn.classList.remove('playing'); pb.btn = null; }
   pb.playing = false;
   pb.paused = false;
   pb.offset = 0;
@@ -1424,7 +1463,7 @@ function pbReset() {
   if (pb.timerId) { clearInterval(pb.timerId); pb.timerId = null; }
   if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
   if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
-  if (pb.btn) { pb.btn.innerHTML = '▶'; pb.btn.classList.remove('playing'); pb.btn = null; }
+  if (pb.btn) { pb.btn.innerHTML = ICONS.play; pb.btn.classList.remove('playing'); pb.btn = null; }
   pb.source = null;
   pb.btn = null;
   pb.progRow = null;
