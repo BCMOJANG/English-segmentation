@@ -50,19 +50,20 @@ body {
 .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
 
 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
+header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
 .theme-btn {
   background: var(--surface2); border: 1px solid var(--border); border-radius: 50%;
   width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem; transition: .2s; color: var(--text);
+  font-size: 1.2rem; transition: background .25s, transform .25s; color: var(--text);
 }
-.theme-btn:hover { background: var(--border); }
+.theme-btn:hover { background: var(--border); transform: rotate(20deg) scale(1.05); }
+.theme-btn:active { transform: rotate(20deg) scale(.95); }
 
 .card {
   background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
   padding: 24px; margin-bottom: 20px; border: 1px solid var(--border);
-  transition: background .3s, border-color .3s;
-  animation: fadeUp .35s ease-out both;
+  transition: background .3s, border-color .3s, box-shadow .3s;
+  animation: fadeUp .4s cubic-bezier(.2,.8,.2,1) backwards;
 }
 
 .upload-zone {
@@ -71,8 +72,9 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 }
 .upload-zone:hover, .upload-zone.dragover {
   border-color: var(--primary); background: var(--primary-light);
+  transform: translateY(-2px);
 }
-.upload-zone .icon { font-size: 3rem; margin-bottom: 12px; }
+.upload-zone .icon { font-size: 3rem; margin-bottom: 12px; animation: floatUp 3.2s ease-in-out infinite; }
 .upload-zone .text { font-size: 1.1rem; font-weight: 500; margin-bottom: 6px; }
 .upload-zone .hint { font-size: .85rem; color: var(--text2); }
 .upload-zone input[type=file] { display: none; }
@@ -122,6 +124,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   align-items: center; gap: 8px;
 }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn:active:not(:disabled) { transform: translateY(0) scale(.97); }
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
 .btn-danger { background: var(--danger); color: #fff; }
@@ -133,9 +136,15 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 
 .progress-section { display: none; }
 .progress-section.show { display: block; animation: fadeUp .35s ease-out both; }
+.card.progress-section { padding-top: 14px; padding-bottom: 14px; }
+.progress-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.progress-top .pct { font-size: .78rem; color: var(--text2); font-variant-numeric: tabular-nums; }
 .progress-bar-wrap {
   width: 100%; height: 8px; background: var(--border); border-radius: 4px;
-  overflow: hidden; margin-bottom: 12px;
+  overflow: hidden; margin-bottom: 8px;
 }
 .progress-bar-fill {
   height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--success));
@@ -143,16 +152,32 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   background-size: 200% 100%;
 }
 .progress-bar-fill.active { animation: shimmer 1.5s linear infinite; }
-.status-text { font-size: .9rem; color: var(--text2); margin-bottom: 8px; }
+.status-text { font-size: .9rem; color: var(--text2); margin-bottom: 6px; }
 .status-text.pulse { animation: pulse 1.5s ease-in-out infinite; }
+.log-toggle {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text2); font-size: .78rem; padding: 2px 12px; cursor: pointer;
+  transition: .2s; font-family: inherit; line-height: 1.5;
+}
+.log-toggle:hover { color: var(--primary); border-color: var(--primary); }
+.log-toggle.on { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
+.log-copy {
+  background: none; border: 1px solid var(--border); border-radius: 20px;
+  color: var(--text2); font-size: .78rem; padding: 2px 12px; cursor: pointer;
+  transition: .2s; font-family: inherit; line-height: 1.5;
+}
+.log-copy:hover { color: var(--primary); border-color: var(--primary); }
 .log-box {
   background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 14px;
-  max-height: 80px; overflow-y: auto; font-size: .82rem; font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-  line-height: 1.5; color: var(--text2);
+  max-height: 160px; overflow-y: auto; font-size: .82rem; font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+  line-height: 1.5; color: var(--text2); display: none;
+  -webkit-user-select: text; user-select: text;
 }
+.log-box.show { display: block; animation: fadeUp .25s ease-out both; }
 .log-box .log-entry { animation: fadeIn .3s ease-out forwards; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes floatUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 @keyframes pulse { 50% { opacity: .6; } }
 @keyframes curtainDown {
@@ -171,20 +196,22 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 .result-card {
   display: flex; gap: 8px 16px; padding: 16px; background: var(--surface2);
   border-radius: var(--radius-sm); margin-bottom: 10px; align-items: center;
-  transition: .2s; border: 1px solid transparent; flex-wrap: wrap;
-  animation: fadeUp .4s ease-out both;
+  transition: box-shadow .25s, transform .25s, border-color .25s; border: 1px solid transparent; flex-wrap: wrap;
+  animation: fadeUp .35s cubic-bezier(.2,.8,.2,1) backwards;
+  content-visibility: auto; contain-intrinsic-size: auto 80px;
 }
 .result-card:nth-child(1) { animation-delay: 0s; }
-.result-card:nth-child(2) { animation-delay: .05s; }
-.result-card:nth-child(3) { animation-delay: .1s; }
-.result-card:nth-child(4) { animation-delay: .15s; }
-.result-card:nth-child(5) { animation-delay: .2s; }
-.result-card:nth-child(6) { animation-delay: .25s; }
-.result-card:nth-child(7) { animation-delay: .3s; }
-.result-card:nth-child(8) { animation-delay: .35s; }
-.result-card:nth-child(9) { animation-delay: .4s; }
-.result-card:nth-child(n+10) { animation-delay: .45s; }
-.result-card:hover { border-color: var(--border); }
+.result-card:nth-child(2) { animation-delay: .04s; }
+.result-card:nth-child(3) { animation-delay: .08s; }
+.result-card:nth-child(4) { animation-delay: .12s; }
+.result-card:nth-child(5) { animation-delay: .16s; }
+.result-card:nth-child(6) { animation-delay: .2s; }
+.result-card:nth-child(7) { animation-delay: .24s; }
+.result-card:nth-child(8) { animation-delay: .28s; }
+.result-card:nth-child(9) { animation-delay: .32s; }
+.result-card:nth-child(n+10) { animation-delay: .36s; }
+.result-card:hover { border-color: var(--primary-light); box-shadow: 0 4px 14px rgba(0,0,0,.12); transform: translateY(-2px); }
+.result-card.playing-card { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 4px 14px rgba(10,132,255,.18); }
 .result-card .index {
   width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
   color: #fff; display: flex; align-items: center; justify-content: center;
@@ -200,6 +227,10 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   display: flex; align-items: center; justify-content: center; font-size: 1rem;
   transition: .15s; background: var(--surface); border: 1px solid var(--border); color: var(--text);
 }
+.result-card .actions button.play-btn {
+  width: 44px; height: 44px; margin-right: 10px;
+}
+.result-card .actions button.play-btn svg { width: 22px; height: 22px; }
 .result-card .actions button:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.08); }
 .result-card .actions button:active { transform: scale(.92); }
 .result-card .actions button.play-btn.playing { background: var(--danger); color: #fff; border-color: var(--danger); }
@@ -216,6 +247,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
   transition: height .15s, background .15s;
 }
 .prog-bar:hover { height: 10px; background: var(--text2); }
+.prog-bar:active { height: 12px; background: var(--text2); }
 .prog-bar .prog-fill {
   height: 100%; background: var(--primary); border-radius: 4px; width: 0%;
   pointer-events: none; transition: width .08s ease-out;
@@ -279,6 +311,22 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 }
 .update-banner .close-btn:hover { background: var(--border); color: var(--text); }
 .hidden { display: none !important; }
+
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--text2); }
+* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 @media (max-width: 640px) {
   .container { padding: 16px 12px 40px; }
   .card { padding: 16px; }
@@ -354,10 +402,16 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; }
 </div>
 
 <div class="card progress-section" id="progressSection">
+  <div class="progress-top">
+    <div style="display:flex;align-items:center;gap:6px">
+      <button type="button" class="log-toggle" id="logToggle" title="显示/隐藏运行日志">▶ 日志</button>
+      <button type="button" class="log-copy" id="logCopy" title="复制全部日志">复制</button>
+    </div>
+    <span class="pct" id="progressPct">0%</span>
+  </div>
   <div class="progress-bar-wrap">
     <div class="progress-bar-fill" id="progressFill"></div>
   </div>
-  <div style="text-align:right;font-size:.78rem;color:var(--text2);margin-top:4px" id="progressPct">0%</div>
   <div class="status-text" id="statusText">准备就绪</div>
   <div class="log-box" id="logBox"></div>
 </div>
@@ -473,24 +527,32 @@ var WORKER_CODE = [
 'if(msg.type==="process"){',
 'cancelled=false;var samples=new Float32Array(msg.audioData);var sr=msg.sampleRate;var ch=msg.channels;var bn=msg.baseName;var p=msg.params;',
 'var dur=samples.length/sr;var fs=Math.floor(sr*0.01);',
-'pt("log",{msg:"音频: "+dur.toFixed(2)+"秒, 采样率: "+sr+"Hz"});_sp(5);',
+'pt("log",{msg:"音频信息: 时长 "+dur.toFixed(2)+"秒, 采样率 "+sr+"Hz, 采样数 "+samples.length+", 帧长 10ms"});_sp(5);',
 'var frames=anaFrames(samples,fs);if(!frames||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
+'var _mn=99,_mx=-99;for(var _fi=0;_fi<frames.length;_fi++){var _db=frames[_fi].dB;if(_db<_mn)_mn=_db;if(_db>_mx)_mx=_db}',
+'pt("log",{msg:"帧统计: 共 "+frames.length+" 帧, 电平范围 "+_mx.toFixed(1)+"dB ~ "+_mn.toFixed(1)+"dB"});',
 '_sp(20);',
+'var thr=Math.pow(10,p.silenceThresh/20),minF=Math.ceil((p.minSilenceLen/1000*sr)/fs);',
+'pt("log",{msg:"静音参数: 阈值 "+p.silenceThresh+"dB (线性 "+thr.toFixed(4)+"), 需连续静音 "+p.minSilenceLen+"ms ("+minF+"帧), 保留静音 "+p.keepSilence+"ms"});',
 'var runs=findSilence(frames,fs,sr,p.minSilenceLen,p.silenceThresh,samples.length);',
 'if(!runs||cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
-'pt("log",{msg:"检测到 "+runs.length+" 个静音段"});_sp(25);',
+'var _silTot=0;for(var _ri=0;_ri<runs.length;_ri++)_silTot+=runs[_ri].es-runs[_ri].ss;',
+'pt("log",{msg:"检测到 "+runs.length+" 个静音段, 覆盖 "+(_silTot/sr).toFixed(2)+"秒 ("+Math.round(_silTot/samples.length*1000)/10+"% 时长)"});_sp(25);',
 'if(runs.length===0)pt("log",{msg:"未检测到足够的静音段，请尝试降低阈值或减小最小静音长度",level:"warn"});',
 'var keep=Math.floor(sr*p.keepSilence/1000);var raw=extractSeg(samples,runs,keep);',
 'pt("log",{msg:"共 "+raw.length+" 个候选片段，正在编码..."});_sp(30);',
-'var minSeg=sr,res=[],ext=".wav";',
+'var minSeg=sr,res=[],ext=".wav",_skip=0,_totDur=0;',
 'for(var i=0;i<raw.length;i++){',
 'if(cancelled){pt("log",{msg:"处理已取消",level:"warn"});pt("complete",{segments:[]});return}',
-'var seg=raw[i];if(seg.length<minSeg){pt("log",{msg:"跳过短片段 "+(i+1)+" ("+(seg.length/sr).toFixed(2)+"秒)",level:"warn"});continue}',
+'var seg=raw[i];if(seg.length<minSeg){_skip++;pt("log",{msg:"跳过短片段 "+(i+1)+" ("+(seg.length/sr).toFixed(2)+"秒 < 1秒)",level:"warn"});continue}',
 'var segDur=seg.length/sr;var segName=bn+"-"+String(i+1).padStart(2,"0")+ext;',
+'var segStart=Math.max(0,(i===0?0:runs[i-1].es-keep)/sr);',
 'var pct=30+((i+1)/raw.length)*65;var data=encWAV(seg,sr);if(!data){pt("complete",{segments:[]});return}',
 'res.push({index:i+1,name:segName,duration:segDur,size:data.byteLength,data:data,samples:seg.buffer});',
-'pt("log",{msg:"片段 "+(i+1)+": "+segName+" ("+segDur.toFixed(2)+"秒)"});_sp(Math.min(Math.round(pct),99))}',
-'_sp(100);pt("log",{msg:"处理完成，共生成 "+res.length+" 个音频片段",level:"success"});var _tr=[];for(var _i=0;_i<res.length;_i++){_tr.push(res[_i].data);_tr.push(res[_i].samples)}self.postMessage({type:"complete",segments:res},_tr)}}'
+'_totDur+=segDur;',
+'pt("log",{msg:"片段 "+(i+1)+"/"+raw.length+": "+segName+" ("+segDur.toFixed(2)+"秒, 源位置 "+segStart.toFixed(2)+"s~"+(segStart+segDur).toFixed(2)+"s, "+(data.byteLength/1024).toFixed(1)+"KB)"});_sp(Math.min(Math.round(pct),99))}',
+'if(_skip>0)pt("log",{msg:"已丢弃 "+_skip+" 个短片段（小于 1 秒）",level:"warn"});',
+'_sp(100);pt("log",{msg:"处理完成，共生成 "+res.length+" 个音频片段，合计 "+_totDur.toFixed(2)+"秒",level:"success"});var _tr=[];for(var _i=0;_i<res.length;_i++){_tr.push(res[_i].data);_tr.push(res[_i].samples)}self.postMessage({type:"complete",segments:res},_tr)}}'
 ].join('\n');
 
 // =========================================================================
@@ -507,6 +569,16 @@ var WORKER_CODE = [
   }, { passive: false });
 })();
 
+window.addEventListener('error', function(e) {
+  var loc = (e.filename ? ' (' + e.filename.split('/').pop() + ':' + e.lineno + ':' + e.colno + ')' : '');
+  if (typeof addLog === 'function') addLog('全局错误: ' + (e.message || '未知错误') + loc, 'error');
+});
+window.addEventListener('unhandledrejection', function(e) {
+  var r = e.reason;
+  var msg = (r && (r.message || r)) || '未处理的 Promise 异常';
+  if (typeof addLog === 'function') addLog('异步异常: ' + msg, 'error');
+});
+
 var worker = null;
 var results = [];
 var isProcessing = false;
@@ -514,7 +586,7 @@ var baseName = 'audio';
 var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
-var APP_VERSION_STR = 'v1.3';
+var APP_VERSION_STR = 'v1.4';
 
 var ICONS = {
   play: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
@@ -529,6 +601,8 @@ var ICONS = {
   spin: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>',
   warn: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>'
 };
+
+var HISTORY_LINK = '<a class="update-link" href="update.html" target="_blank" rel="noopener" title="查看历史更新">查看历史更新</a>';
 
 var pb = {
   ctx: null, index: -1, source: null, startTime: 0, offset: 0,
@@ -572,6 +646,7 @@ function showUpdat(text, ver) {
   inner.innerHTML =
     '<div class="update-info"><strong>' + ICONS.mega + ' 更新内容</strong>' +
     '<div style="margin-top:6px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">' + escHtml(text) + '</div></div>' +
+    HISTORY_LINK +
     '<button class="close-btn" id="updateCloseBtn">&times;</button>';
   banner.classList.add('show');
   $('updateCloseBtn').addEventListener('click', function() {
@@ -604,6 +679,7 @@ function checkUpdate() {
         '<div class="update-info"><strong>' + ICONS.mega + ' 有新版本可用 (' + escHtml(remoteVer) + ')</strong>' +
         '<div style="margin-top:4px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">本地版本: ' + escHtml(APP_VERSION_STR) + '</div>' + updatHtml + '</div>' +
         '<button class="update-link" id="updateDownloadBtn">直接下载最新版 →</button>' +
+        HISTORY_LINK +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.add('show');
       $('updateDownloadBtn').addEventListener('click', function() {
@@ -643,6 +719,7 @@ function checkUpdate() {
       inner.innerHTML =
         '<div class="update-info"><strong>' + ICONS.warn + ' 检查更新失败</strong>' +
         '<div style="margin-top:4px;font-size:.78rem;color:var(--text2)">网络异常，请稍后重试</div></div>' +
+        HISTORY_LINK +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.add('show');
       $('updateCloseBtn').addEventListener('click', function() {
@@ -662,7 +739,9 @@ function initWorker() {
     var blob = new Blob([WORKER_CODE], { type: 'application/javascript' });
     worker = new Worker(URL.createObjectURL(blob));
     worker.onerror = function(e) {
-      addLog('Worker 内部错误: ' + (e.message || '未知错误'), 'error');
+      var loc = '';
+      if (e.filename) loc = ' (' + e.filename.split('/').pop() + ':' + (e.lineno || '?') + ':' + (e.colno || '?') + ')';
+      addLog('Worker 内部错误: ' + (e.message || '未知错误') + loc, 'error');
       e.preventDefault();
       isProcessing = false;
       $('startBtn').disabled = false;
@@ -721,6 +800,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   setupUpload();
   setupParams();
+  setupLogToggle();
   $('themeBtn').addEventListener('click', function(e) { toggleTheme(e); });
   $('startBtn').addEventListener('click', startProcessing);
   $('cancelBtn').addEventListener('click', cancelProcessing);
@@ -796,6 +876,61 @@ function setupParams() {
   ['minSilence', 'silenceThresh', 'keepSilence'].forEach(function(id) {
     $(id).addEventListener('input', function() { updateParam(id); });
   });
+}
+
+function setupLogToggle() {
+  var box = $('logBox');
+  var btn = $('logToggle');
+  var saved = null;
+  try { saved = localStorage.getItem('logOpen'); } catch(e) {}
+  var open = saved === '1';
+  function apply() {
+    box.classList.toggle('show', open);
+    btn.classList.toggle('on', open);
+    btn.innerHTML = (open ? '▼' : '▶') + ' 日志';
+    try { localStorage.setItem('logOpen', open ? '1' : '0'); } catch(e) {}
+  }
+  apply();
+  btn.addEventListener('click', function() {
+    open = !open;
+    apply();
+    if (open) box.scrollTop = box.scrollHeight;
+  });
+
+  var copyBtn = $('logCopy');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+      var text = box.textContent;
+      if (!text) { addLog('日志为空，无可复制内容', 'warn'); return; }
+      function done(ok) {
+        copyBtn.textContent = ok ? '已复制' : '复制失败';
+        copyBtn.style.color = ok ? 'var(--success)' : 'var(--danger)';
+        setTimeout(function() {
+          copyBtn.textContent = '复制';
+          copyBtn.style.color = '';
+        }, 1500);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function() { done(true); })
+          .catch(function() { legacyCopy(text, done); });
+      } else {
+        legacyCopy(text, done);
+      }
+    });
+  }
+}
+
+function legacyCopy(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  var ok = false;
+  try { ok = document.execCommand('copy'); } catch(e) { ok = false; }
+  ta.remove();
+  done(ok);
 }
 
 function updateParam(id) {
@@ -907,7 +1042,10 @@ function startProcessing() {
   };
 
   var startTime = Date.now();
-  addLog('参数: 静音长度=' + params.minSilenceLen + 'ms, 阈值=' + params.silenceThresh + 'dB, 保留=' + params.keepSilence + 'ms');
+  logSystemInfo();
+  addLog('========== 本次处理 ==========');
+  addLog('文件: ' + file.name + ' (' + formatSize(file.size) + ')');
+  addLog('参数: 最小静音长度=' + params.minSilenceLen + 'ms, 静音阈值=' + params.silenceThresh + 'dB, 保留静音=' + params.keepSilence + 'ms');
 
   if (!worker) { initWorker(); if (!worker) { addLog('Worker 初始化失败', 'error'); resetProcessing(); return; } }
 
@@ -923,6 +1061,7 @@ function startProcessing() {
   readPromise.then(function(buf) {
     $('statusText').textContent = '正在解码音频 (' + formatSize(buf.byteLength) + ')...';
     setProgress(2);
+    addLog('读取完成: ' + formatSize(buf.byteLength) + ', 耗时 ' + ((Date.now() - startTime) / 1000).toFixed(1) + 's');
 
     // 解码模拟 2% → 65%，解码完成后再从当前位置平滑到 70%（混音）
     var _estSec = Math.max(0.5, buf.byteLength / (1024 * 1024) * 2.25);
@@ -940,6 +1079,8 @@ function startProcessing() {
     try {
       ctx.decodeAudioData(buf, function(audioBuffer) {
         clearInterval(_decTimer);
+        var _decDoneT = Date.now();
+        addLog('解码完成: ' + audioBuffer.numberOfChannels + ' 声道, 采样率 ' + audioBuffer.sampleRate + 'Hz, 解码耗时 ' + ((_decDoneT - startTime) / 1000).toFixed(1) + 's');
         // 从当前进度平滑过渡到 70%（混音完成）
         var _mixFrom = parseFloat($('progressFill').style.width) || 2;
 
@@ -973,7 +1114,8 @@ function startProcessing() {
               setTimeout(__mix, 0);
             } else {
               // 混音完成，继续后续处理
-              addLog('已加载: ' + file.name + ' (' + formatDuration(audioBuffer.length / sampleRate) + ')', 'success');
+              var _mixDoneT = Date.now();
+              addLog('已加载: ' + file.name + ' (' + formatDuration(audioBuffer.length / sampleRate) + ', ' + audioBuffer.numberOfChannels + ' 声道, ' + sampleRate + 'Hz, ' + formatSize(buf.byteLength) + '), 混音耗时 ' + ((_mixDoneT - _decDoneT) / 1000).toFixed(1) + 's', 'success');
 
               var handler = function(e) {
                 var msg = e.data;
@@ -1068,10 +1210,68 @@ function addLog(msg, level) {
   entry.textContent = '[' + time + '] ' + msg;
   box.appendChild(entry);
   box.scrollTop = box.scrollHeight;
+  if (level === 'error') {
+    box.classList.add('show');
+    var btn = $('logToggle');
+    if (btn) { btn.classList.add('on'); btn.innerHTML = '▼ 日志'; }
+    try { localStorage.setItem('logOpen', '1'); } catch(e) {}
+  }
 }
 
 function clearLog() {
   $('logBox').innerHTML = '';
+}
+
+function detectBrowser() {
+  var ua = navigator.userAgent;
+  var m;
+  if ((m = ua.match(/Edg\/([\d.]+)/))) return 'Edge ' + m[1];
+  if ((m = ua.match(/OPR\/([\d.]+)/))) return 'Opera ' + m[1];
+  if ((m = ua.match(/Chrome\/([\d.]+)/))) return 'Chrome ' + m[1];
+  if ((m = ua.match(/Firefox\/([\d.]+)/))) return 'Firefox ' + m[1];
+  if ((m = ua.match(/Version\/([\d.]+).*Safari/))) return 'Safari ' + m[1];
+  if (/Safari/.test(ua)) return 'Safari';
+  if ((m = ua.match(/MicroMessenger\/([\d.]+)/))) return '微信内置浏览器 ' + m[1];
+  return '未知浏览器';
+}
+
+function detectOS() {
+  var ua = navigator.userAgent;
+  if (/Windows NT 10/.test(ua)) return 'Windows 10/11';
+  if (/Windows NT 6\.1/.test(ua)) return 'Windows 7';
+  if (/Windows NT 6\.3/.test(ua)) return 'Windows 8.1';
+  if (/Mac OS X/.test(ua)) return 'macOS';
+  if (/Android/.test(ua)) return 'Android';
+  if (/iPhone|iPad|iPod/.test(ua)) return 'iOS';
+  if (/Linux/.test(ua)) return 'Linux';
+  return '未知系统';
+}
+
+function logSystemInfo() {
+  var lines = [];
+  lines.push('========== 系统信息 ==========');
+  lines.push('应用版本: ' + APP_VERSION_STR);
+  lines.push('浏览器: ' + detectBrowser());
+  lines.push('操作系统: ' + detectOS());
+  lines.push('屏幕: ' + window.screen.width + 'x' + window.screen.height + ', 像素比 ' + (window.devicePixelRatio || 1));
+  lines.push('语言: ' + (navigator.language || '未知') + ', 在线: ' + (navigator.onLine ? '是' : '否'));
+  lines.push('当前时间: ' + new Date().toLocaleString());
+  lines.push('Web Worker: ' + (typeof Worker !== 'undefined' ? '支持' : '不支持（将使用主线程处理，大文件可能卡顿）'));
+  lines.push('AudioContext: ' + ((window.AudioContext || window.webkitAudioContext) ? '支持' : '不支持'));
+  try {
+    var tctx = new (window.AudioContext || window.webkitAudioContext)();
+    lines.push('AudioContext 默认采样率: ' + tctx.sampleRate + 'Hz');
+    tctx.close();
+  } catch(e) {}
+  try {
+    var _t = '__lt'; localStorage.setItem(_t, _t); localStorage.removeItem(_t);
+    lines.push('localStorage: 可用');
+  } catch(e) {
+    lines.push('localStorage: 不可用（隐私模式或存储已满）');
+  }
+  lines.push('UA: ' + navigator.userAgent);
+  for (var i = 0; i < lines.length; i++) addLog(lines[i]);
+  addLog('=============================');
 }
 
 function showResults(segments) {
@@ -1369,6 +1569,10 @@ function doPlay(index, btn) {
     if (pb.progCur) pb.progCur.textContent = formatPlayTime(offset);
     if (pb.progTotal) pb.progTotal.textContent = formatPlayTime(seg.duration);
 
+    var cards = document.querySelectorAll('.result-card.playing-card');
+    for (var _ci = 0; _ci < cards.length; _ci++) cards[_ci].classList.remove('playing-card');
+    card.classList.add('playing-card');
+
     btn.innerHTML = ICONS.pause;
     btn.classList.add('playing');
 
@@ -1449,6 +1653,8 @@ function stopPlay() {
   }
   if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
   if (pb.btn) { pb.btn.innerHTML = ICONS.play; pb.btn.classList.remove('playing'); pb.btn = null; }
+  var _pc = document.querySelectorAll('.result-card.playing-card');
+  for (var _i = 0; _i < _pc.length; _i++) _pc[_i].classList.remove('playing-card');
   pb.playing = false;
   pb.paused = false;
   pb.offset = 0;
@@ -1464,6 +1670,8 @@ function pbReset() {
   if (pb.source) { try { pb.source.stop(); } catch(e) {} pb.source = null; }
   if (pb.progRow) { pb.progRow.style.display = 'none'; pb.progRow = null; }
   if (pb.btn) { pb.btn.innerHTML = ICONS.play; pb.btn.classList.remove('playing'); pb.btn = null; }
+  var _pc = document.querySelectorAll('.result-card.playing-card');
+  for (var _i = 0; _i < _pc.length; _i++) _pc[_i].classList.remove('playing-card');
   pb.source = null;
   pb.btn = null;
   pb.progRow = null;
