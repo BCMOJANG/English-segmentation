@@ -678,8 +678,8 @@ function checkUpdate() {
       inner.innerHTML =
         '<div class="update-info"><strong>' + ICONS.mega + ' 有新版本可用 (' + escHtml(remoteVer) + ')</strong>' +
         '<div style="margin-top:4px;font-size:.82rem;line-height:1.6;white-space:pre-wrap">本地版本: ' + escHtml(APP_VERSION_STR) + '</div>' + updatHtml + '</div>' +
-        '<button class="update-link" id="updateDownloadBtn">直接下载最新版 →</button>' +
         HISTORY_LINK +
+        '<button class="update-link" id="updateDownloadBtn">点击下载最新版</button>' +
         '<button class="close-btn" id="updateCloseBtn">&times;</button>';
       banner.classList.add('show');
       $('updateDownloadBtn').addEventListener('click', function() {
@@ -698,11 +698,11 @@ function checkUpdate() {
             a.click();
             a.remove();
             setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
-            btn.textContent = '直接下载最新版 →';
+            btn.textContent = '点击下载最新版';
             btn.disabled = false;
           })
           .catch(function() {
-            btn.textContent = '直接下载最新版 →';
+            btn.textContent = '点击下载最新版';
             btn.disabled = false;
             addLog('下载失败，请稍后重试', 'error');
           });
