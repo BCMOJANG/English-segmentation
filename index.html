@@ -4,348 +4,58 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>音频分割工具</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%23007bff' d='M4 12a8 8 0 1 1 16 0h-1a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5a10 10 0 0 0-20 0v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2z'/></svg>">
-<style>
-:root {
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface2: #f0f0f2;
-  --text: #1d1d1f;
-  --text2: #6e6e73;
-  --border: #d2d2d7;
-  --primary: #007aff;
-  --primary-hover: #0062cc;
-  --primary-light: #e8f0fe;
-  --success: #34c759;
-  --danger: #ff3b30;
-  --danger-hover: #d62d20;
-  --shadow: 0 2px 12px rgba(0,0,0,0.08);
-  --radius: 12px;
-  --radius-sm: 8px;
-}
-[data-theme=dark] {
-  --bg: #1c1c1e;
-  --surface: #2c2c2e;
-  --surface2: #3a3a3c;
-  --text: #f5f5f7;
-  --text2: #a1a1a6;
-  --border: #48484a;
-  --primary: #0a84ff;
-  --primary-hover: #409cff;
-  --primary-light: #1c3a5e;
-  --shadow: 0 2px 12px rgba(0,0,0,0.3);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 16px; }
-html, body { touch-action: pan-y; overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
-  background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.5;
-  scrollbar-gutter: stable;
-  transition: background .3s, color .3s;
-  -webkit-user-select: none; user-select: none;
-}
-
-.container { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
-
-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
-header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; color: var(--text); }
-.theme-btn {
-  background: var(--surface2); border: 1px solid var(--border); border-radius: 50%;
-  width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 1.2rem; transition: background .25s, transform .25s; color: var(--text);
-}
-.theme-btn:hover { background: var(--border); transform: rotate(20deg) scale(1.05); }
-.theme-btn:active { transform: rotate(20deg) scale(.95); }
-
-.card {
-  background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
-  padding: 24px; margin-bottom: 20px; border: 1px solid var(--border);
-  transition: background .3s, border-color .3s, box-shadow .3s;
-  animation: fadeUp .4s cubic-bezier(.2,.8,.2,1) backwards;
-}
-
-.upload-zone {
-  border: 2px dashed var(--border); border-radius: var(--radius); padding: 48px 24px;
-  text-align: center; cursor: pointer; transition: .25s; background: var(--surface2);
-}
-.upload-zone:hover, .upload-zone.dragover {
-  border-color: var(--primary); background: var(--primary-light);
-  transform: translateY(-2px);
-}
-.upload-zone .icon { font-size: 3rem; margin-bottom: 12px; animation: floatUp 3.2s ease-in-out infinite; }
-.upload-zone .text { font-size: 1.1rem; font-weight: 500; margin-bottom: 6px; }
-.upload-zone .hint { font-size: .85rem; color: var(--text2); }
-.upload-zone input[type=file] { display: none; }
-
-.file-info { display: none; margin-top: 16px; padding: 12px 16px; background: var(--surface2);
-  border-radius: var(--radius-sm); align-items: center; gap: 12px; }
-.file-info.show { display: flex; animation: fadeUp .3s ease-out both; }
-.file-info .name { flex: 1; font-weight: 500; word-break: break-all; }
-.file-info .size, .file-info .duration { font-size: .85rem; color: var(--text2); white-space: nowrap; }
-.file-info .remove-btn { background: none; border: none; color: var(--danger); cursor: pointer;
-  font-size: 1.2rem; padding: 4px; line-height: 1; }
-
-.params-grid { display: grid; gap: 20px; }
-.param-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-.param-header label { font-weight: 500; font-size: .9rem; }
-.param-header .value { font-size: .85rem; color: var(--primary); font-weight: 600;
-  background: var(--primary-light); padding: 2px 10px; border-radius: 20px; }
-.param input[type=range] {
-  width: 100%; -webkit-appearance: none; appearance: none; height: 6px;
-  background: var(--border); border-radius: 3px; outline: none;
-  transition: background .2s;
-}
-.param input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-  background: var(--primary); cursor: pointer; border: 3px solid var(--surface);
-  box-shadow: 0 1px 4px rgba(0,0,0,.2); transition: .15s;
-}
-.param input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
-.param input[type=range]::-moz-range-thumb {
-  width: 20px; height: 20px; border-radius: 50%; background: var(--primary);
-  cursor: pointer; border: 3px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.2);
-}
-.param-desc { font-size: .78rem; color: var(--text2); margin-top: 4px; }
-
-.param select {
-  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
-  border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); font-size: .9rem; cursor: pointer;
-  transition: border-color .2s; outline: none;
-}
-.param select:hover, .param select:focus { border-color: var(--primary); }
-
-.controls { display: flex; gap: 12px; flex-wrap: wrap; }
-.btn {
-  padding: 12px 28px; border: none; border-radius: var(--radius-sm); font-size: 1rem;
-  font-weight: 600; cursor: pointer; transition: .2s; display: inline-flex;
-  align-items: center; gap: 8px;
-}
-.btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn:active:not(:disabled) { transform: translateY(0) scale(.97); }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--primary-hover); transform: translateY(-1px); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover:not(:disabled) { background: var(--danger-hover); transform: translateY(-1px); }
-.btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
-.btn-outline:hover:not(:disabled) { background: var(--surface2); }
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover:not(:disabled) { opacity: .85; transform: translateY(-1px); }
-
-.progress-section { display: none; }
-.progress-section.show { display: block; animation: fadeUp .35s ease-out both; }
-.card.progress-section { padding-top: 14px; padding-bottom: 14px; }
-.progress-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 8px;
-}
-.progress-top .pct { font-size: .78rem; color: var(--text2); font-variant-numeric: tabular-nums; }
-.progress-bar-wrap {
-  width: 100%; height: 8px; background: var(--border); border-radius: 4px;
-  overflow: hidden; margin-bottom: 8px;
-}
-.progress-bar-fill {
-  height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), var(--success));
-  border-radius: 4px; transition: width .3s;
-  background-size: 200% 100%;
-}
-.progress-bar-fill.active { animation: shimmer 1.5s linear infinite; }
-.status-text { font-size: .9rem; color: var(--text2); margin-bottom: 6px; }
-.status-text.pulse { animation: pulse 1.5s ease-in-out infinite; }
-.log-toggle {
-  background: none; border: 1px solid var(--border); border-radius: 20px;
-  color: var(--text2); font-size: .78rem; padding: 2px 12px; cursor: pointer;
-  transition: .2s; font-family: inherit; line-height: 1.5;
-}
-.log-toggle:hover { color: var(--primary); border-color: var(--primary); }
-.log-toggle.on { color: var(--primary); border-color: var(--primary); background: var(--primary-light); }
-.log-copy {
-  background: none; border: 1px solid var(--border); border-radius: 20px;
-  color: var(--text2); font-size: .78rem; padding: 2px 12px; cursor: pointer;
-  transition: .2s; font-family: inherit; line-height: 1.5;
-}
-.log-copy:hover { color: var(--primary); border-color: var(--primary); }
-.log-box {
-  background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 14px;
-  max-height: 160px; overflow-y: auto; font-size: .82rem; font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
-  line-height: 1.5; color: var(--text2); display: none;
-  -webkit-user-select: text; user-select: text;
-}
-.log-box.show { display: block; animation: fadeUp .25s ease-out both; }
-.log-box .log-entry { animation: fadeIn .3s ease-out forwards; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes floatUp { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-@keyframes pulse { 50% { opacity: .6; } }
-@keyframes curtainDown {
-  from { clip-path: inset(0 0 100% 0); opacity: 0; transform: translateY(-8px); }
-  to   { clip-path: inset(0);          opacity: 1; transform: translateY(0);    }
-}
-.log-box .log-warn { color: #ff9500; }
-.log-box .log-error { color: var(--danger); }
-.log-box .log-success { color: var(--success); }
-
-.results-section { display: none; }
-.results-section.show { display: block; animation: fadeUp .35s ease-out both; }
-.results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
-.results-header h2 { font-size: 1.15rem; }
-.results-summary { font-size: .85rem; color: var(--text2); }
-.result-card {
-  display: flex; gap: 8px 16px; padding: 16px; background: var(--surface2);
-  border-radius: var(--radius-sm); margin-bottom: 10px; align-items: center;
-  transition: box-shadow .25s, transform .25s, border-color .25s; border: 1px solid transparent; flex-wrap: wrap;
-  animation: fadeUp .35s cubic-bezier(.2,.8,.2,1) backwards;
-  content-visibility: auto; contain-intrinsic-size: auto 80px;
-}
-.result-card:nth-child(1) { animation-delay: 0s; }
-.result-card:nth-child(2) { animation-delay: .04s; }
-.result-card:nth-child(3) { animation-delay: .08s; }
-.result-card:nth-child(4) { animation-delay: .12s; }
-.result-card:nth-child(5) { animation-delay: .16s; }
-.result-card:nth-child(6) { animation-delay: .2s; }
-.result-card:nth-child(7) { animation-delay: .24s; }
-.result-card:nth-child(8) { animation-delay: .28s; }
-.result-card:nth-child(9) { animation-delay: .32s; }
-.result-card:nth-child(n+10) { animation-delay: .36s; }
-.result-card:hover { border-color: var(--primary-light); box-shadow: 0 4px 14px rgba(0,0,0,.12); transform: translateY(-2px); }
-.result-card.playing-card { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), 0 4px 14px rgba(10,132,255,.18); }
-.result-card .index {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-weight: 700; font-size: .85rem; flex-shrink: 0;
-}
-.result-card .info { flex: 1; min-width: 0; }
-.result-card .info { -webkit-user-select: text; user-select: text; }
-.result-card .info .name { font-weight: 500; font-size: .9rem; word-break: break-all; }
-.result-card .info .duration { font-size: .78rem; color: var(--text2); margin-top: 2px; }
-.result-card .actions { display: flex; gap: 6px; flex-shrink: 0; }
-.result-card .actions button {
-  width: 36px; height: 36px; border: none; border-radius: 50%; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; font-size: 1rem;
-  transition: .15s; background: var(--surface); border: 1px solid var(--border); color: var(--text);
-}
-.result-card .actions button.play-btn {
-  width: 44px; height: 44px; margin-right: 10px;
-}
-.result-card .actions button.play-btn svg { width: 22px; height: 22px; }
-.result-card .actions button:hover { background: var(--primary); color: #fff; border-color: var(--primary); transform: scale(1.08); }
-.result-card .actions button:active { transform: scale(.92); }
-.result-card .actions button.play-btn.playing { background: var(--danger); color: #fff; border-color: var(--danger); }
-.result-card .actions button.play-btn.playing:hover { transform: scale(1.08); }
-.result-card .actions button:disabled { opacity: .3; cursor: default; }
-
-.result-card .waveform-wrap { width: 120px; height: 36px; flex-shrink: 0; }
-.result-card .waveform-wrap canvas { width: 100%; height: 100%; border-radius: 4px; display: block; }
-
-.prog-row { display: flex; align-items: center; gap: 8px; width: 100%; order: 10; margin-top: 2px; }
-.prog-bar {
-  flex: 1; height: 8px; background: var(--border); border-radius: 4px;
-  position: relative; min-width: 60px; cursor: pointer;
-  transition: height .15s, background .15s;
-}
-.prog-bar:hover { height: 10px; background: var(--text2); }
-.prog-bar:active { height: 12px; background: var(--text2); }
-.prog-bar .prog-fill {
-  height: 100%; background: var(--primary); border-radius: 4px; width: 0%;
-  pointer-events: none; transition: width .08s ease-out;
-}
-.prog-time { font-size: .72rem; color: var(--text2); font-variant-numeric: tabular-nums; min-width: 30px; }
-.prog-cur { text-align: right; }
-.prog-total { text-align: left; }
-
-.download-all-wrap { margin-top: 16px; text-align: center; animation: fadeUp .4s ease-out .5s both; }
-
-.footer { display: flex; justify-content: center; gap: 20px; padding: 24px 0 16px; border-top: 1px solid var(--border); margin-top: 8px; }
-.footer a, .footer button { color: var(--text2); transition: color .2s; display: flex; align-items: center; gap: 4px; }
-.footer a:hover, .footer button:hover { color: var(--text); }
-.footer button { background: none; border: none; cursor: pointer; font-size: .85rem; font-family: inherit; padding: 0; }
-.footer .version-badge { font-size: .75rem; color: var(--text2); opacity: .6; }
-
-.main-row { display: flex; flex-direction: column; gap: 20px; }
-@media (min-width: 768px) {
-  .main-row { flex-direction: row; align-items: flex-start; }
-  .main-row > .col-left, .main-row > .col-right { flex: 1; min-width: 0; }
-}
-.main-row + .progress-section { margin-top: 0; }
-
-
-
-::view-transition-old(root) { animation: none; z-index: 1; }
-::view-transition-new(root) {
-  animation: circle-in .8s ease-out both;
-  z-index: 2;
-}
-@keyframes circle-in {
-  from { clip-path: circle(0% at var(--click-x, 50%) var(--click-y, 50%)); }
-  to { clip-path: circle(150% at var(--click-x, 50%) var(--click-y, 50%)); }
-}
-
-.update-banner {
-  display: grid; grid-template-rows: 0fr; overflow: hidden; opacity: 0;
-  margin-bottom: 0; border: 1px solid var(--primary); border-width: 0;
-  background: var(--primary-light); border-radius: var(--radius-sm); font-size: .85rem;
-  transition: grid-template-rows .5s ease-out, opacity .45s ease-out, margin-bottom .5s ease-out, border-width .45s ease-out;
-}
-.update-banner-inner {
-  min-height: 0; overflow: hidden; display: flex; align-items: center;
-  justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 0 16px;
-}
-.update-banner.show {
-  grid-template-rows: 1fr; opacity: 1; margin-bottom: 16px; border-width: 1px;
-}
-.update-banner.show .update-banner-inner {
-  padding: 10px 16px; animation: curtainDown .45s ease-out both;
-}
-.update-banner .update-info { flex: 1; }
-.update-banner .update-info strong { color: var(--primary); }
-.update-banner .update-info .update-date { color: var(--text2); font-size: .78rem; margin-top: 2px; }
-.update-banner .update-link { color: var(--primary); text-decoration: none; font-weight: 500; white-space: nowrap; background: none; border: none; cursor: pointer; font-size: .85rem; font-family: inherit; padding: 0; }
-.update-banner .update-link:hover { text-decoration: underline; }
-.update-banner .close-btn {
-  background: none; border: none; color: var(--text2); cursor: pointer;
-  font-size: 1.2rem; line-height: 1; padding: 2px 6px; border-radius: 4px;
-  transition: .15s;
-}
-.update-banner .close-btn:hover { background: var(--border); color: var(--text); }
-.hidden { display: none !important; }
-
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; border: 2px solid var(--bg); }
-::-webkit-scrollbar-thumb:hover { background: var(--text2); }
-* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-@media (max-width: 640px) {
-  .container { padding: 16px 12px 40px; }
-  .card { padding: 16px; }
-  .result-card { flex-wrap: wrap; }
-  .result-card .waveform-wrap { width: 100%; height: 40px; order: -1; }
-  .result-card .actions { width: 100%; justify-content: flex-end; }
-  .upload-zone { padding: 32px 16px; }
-  .params-grid { gap: 16px; }
-}
-</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%230067c0' d='M4 12a8 8 0 1 1 16 0h-1a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-5a10 10 0 0 0-20 0v5a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2z'/></svg>">
+<script>
+(function(){ try { if (sessionStorage.getItem('navAnimate') === '1') { sessionStorage.removeItem('navAnimate'); document.documentElement.className += ' page-in'; } } catch(e){} })();
+</script>
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="page-app">
 
-<div class="container">
-<header>
-  <h1>音频分割</h1>
-  <button class="theme-btn" id="themeBtn" title="切换主题"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg></button>
-</header>
-<div id="updateBanner" class="update-banner"><div class="update-banner-inner"></div></div>
+<div class="nav-scrim" id="navScrim"></div>
+<div class="nav-view">
+<nav class="nav-pane" id="navPane">
+  <div class="nav-app">
+    <div class="app-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg></div>
+    <div class="nav-title">音频分割工具</div>
+  </div>
+  <div class="nav-items">
+    <button type="button" class="nav-item active" data-nav="home" data-action="home" data-tip="首页">
+      <span class="nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
+      <span class="nav-label">首页</span>
+    </button>
+    <a class="nav-item" href="update.html" data-tip="更新历史">
+      <span class="nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span>
+      <span class="nav-label">更新历史</span>
+    </a>
+    <button type="button" class="nav-item" data-nav="help" data-action="help" data-tip="使用说明">
+      <span class="nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+      <span class="nav-label">使用说明</span>
+    </button>
+  </div>
+  <div class="nav-footer">
+    <button type="button" class="nav-item" data-nav="about" data-action="about" data-tip="关于">
+      <span class="nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg></span>
+      <span class="nav-label">关于 <span class="nav-version" id="navAboutVer"></span></span>
+    </button>
+    <button type="button" class="nav-item" data-action="download" data-tip="离线版">
+      <span class="nav-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg></span>
+      <span class="nav-label">离线版</span>
+    </button>
+  </div>
+</nav>
+<div class="nav-content">
+  <div class="title-bar">
+    <button type="button" class="icon-btn" id="paneToggle" title="展开 / 收起导航">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <h2 class="page-title">音频分割</h2>
+    <button class="icon-btn theme-btn" id="themeBtn" title="切换主题">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/></svg>
+    </button>
+  </div>
+  <div class="container">
+  <div id="updateBanner" class="update-banner"><div class="update-banner-inner"></div></div>
 
 <div class="main-row">
   <div class="col-left">
@@ -422,7 +132,7 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; color: 
       <h2>分割结果</h2>
       <div class="results-summary" id="resultsSummary"></div>
     </div>
-    <label style="font-size:.82rem;color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px;user-select:none">
+    <label class="wave-toggle">
       <input type="checkbox" id="waveToggle"> 波形图
     </label>
   </div>
@@ -432,23 +142,53 @@ header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -.02em; color: 
   </div>
 </div>
 
-<footer class="footer">
-  <a href="https://github.com/BCMOJANG/English-segmentation" target="_blank" rel="noopener" title="GitHub 仓库">
-    <svg viewBox="0 0 16 16" height="20" width="20" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-  </a>
-  <a href="https://space.bilibili.com/1248933612" target="_blank" rel="noopener" title="Bilibili 空间">
-    <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M7.172 2.757 10.414 6h3.171l3.243-3.242a1 1 0 011.415 1.415L16.414 6H18.5A3.5 3.5 0 0122 9.5v8a3.5 3.5 0 01-3.5 3.5h-13A3.5 3.5 0 012 17.5v-8A3.5 3.5 0 015.5 6h2.085L5.757 4.171a1 1 0 011.415-1.415zM18.5 8h-13a1.5 1.5 0 00-1.493 1.356L4 9.5v8a1.5 1.5 0 001.356 1.493L5.5 19h13a1.5 1.5 0 001.493-1.356L20 17.5v-8A1.5 1.5 0 0018.5 8zM8 11a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1zm8 0a1 1 0 011 1v2a1 1 0 01-2 0v-2a1 1 0 011-1z"/></svg>
-  </a>
-  <a href="https://qm.qq.com/q/GltIAFD6Am" target="_blank" rel="noopener" title="点击链接加入群聊【听力分割】">
-    <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M19.913 14.529a31.977 31.977 0 00-.675-1.886l-.91-2.246c0-.026.012-.468.012-.696C18.34 5.86 16.507 2 12 2S5.66 5.86 5.66 9.7c0 .229.011.671.012.697l-.91 2.246a32.777 32.777 0 00-.675 1.886c-.86 2.737-.581 3.87-.369 3.895.455.054 1.771-2.06 1.771-2.06 0 1.224.637 2.822 2.016 3.976-.515.157-1.147.399-1.554.695-.365.267-.319.54-.253.65.289.481 4.955.307 6.303.157 1.347.15 6.014.324 6.302-.158.066-.11.112-.382-.253-.649-.407-.296-1.039-.538-1.555-.696 1.379-1.153 2.016-2.751 2.016-3.976 0 0 1.316 2.115 1.771 2.06.212-.025.49-1.157-.37-3.894"/></svg>
-  </a>
-  <button id="downloadHtmlBtn" title="保存为离线版本">
-    <svg viewBox="0 0 24 24" height="20" width="20" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/><path d="M8 12l4 4 4-4-1.5-1.5L13 12.5V8h-2v4.5l-1.5-1.5L8 12z"/></svg>
-    离线版
-  </button>
-   <span class="version-badge" id="versionBadge"></span>
-</footer>
+  </div>
+</div>
+</div>
 
+<div class="dialog-overlay" id="helpDialog" role="dialog" aria-modal="true" aria-label="使用说明">
+  <div class="dialog">
+    <div class="dialog-title">使用说明</div>
+    <div class="dialog-content">
+      <p>纯前端音频分割工具，基于静音检测自动切割，音频文件不会上传到服务器。</p>
+      <ul>
+        <li>拖拽或点击上传音频，支持 MP3、WAV、OGG、FLAC、M4A</li>
+        <li>调整静音参数：最小静音长度、静音阈值、保留静音</li>
+        <li>点击「开始分割」，实时查看处理进度与日志</li>
+        <li>在线试听每个片段，或单独下载 / 一键打包 ZIP</li>
+        <li>「波形图」开关可预览片段波形；右上角切换深色 / 浅色主题</li>
+        <li>空格键快速播放 / 暂停第一段，Esc 停止播放</li>
+      </ul>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-accent" id="helpCloseBtn">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-overlay" id="aboutDialog" role="dialog" aria-modal="true" aria-label="关于">
+  <div class="dialog">
+    <div class="dialog-title">关于</div>
+    <div class="dialog-content">
+      <div class="about-app">
+        <div class="about-icon"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3z"/></svg></div>
+        <div>
+          <div class="about-name">音频分割工具</div>
+          <div class="about-desc">纯前端音频分割工具，基于静音检测自动切割，音频文件不会上传到服务器。</div>
+          <div class="about-version" id="aboutVer"></div>
+        </div>
+      </div>
+      <div class="about-contact">
+        <span>开源仓库</span>
+        <a class="about-github" href="https://github.com/BCMOJANG/English-segmentation" target="_blank" rel="noopener" title="GitHub">
+          <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn btn-accent" id="aboutCloseBtn">关闭</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -575,6 +315,10 @@ window.addEventListener('error', function(e) {
 });
 window.addEventListener('unhandledrejection', function(e) {
   var r = e.reason;
+  if (r && /transition/i.test(r.message || '')) {
+    if (e.preventDefault) e.preventDefault();
+    return;
+  }
   var msg = (r && (r.message || r)) || '未处理的 Promise 异常';
   if (typeof addLog === 'function') addLog('异步异常: ' + msg, 'error');
 });
@@ -586,7 +330,7 @@ var baseName = 'audio';
 var playbackPositions = {};
 var _decTimer = null;
 var _showWaveforms = false;
-var APP_VERSION_STR = 'v1.4';
+var APP_VERSION_STR = 'v1.5';
 
 var ICONS = {
   play: '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
@@ -764,7 +508,7 @@ function getPreferredTheme() {
     var mq = window.matchMedia('(prefers-color-scheme: dark)');
     if (mq && mq.matches) return 'dark';
   } catch(e) {}
-  return 'light';
+  return 'dark';
 }
 
 function applyTheme(theme) {
@@ -795,7 +539,7 @@ function setupTheme() {
 document.addEventListener('DOMContentLoaded', function() {
   setupTheme();
   checkUpdate();
-  $('versionBadge').textContent = APP_VERSION_STR;
+  var _vb = $('versionBadge'); if (_vb) _vb.textContent = APP_VERSION_STR;
   document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
 
   setupUpload();
@@ -805,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
   $('startBtn').addEventListener('click', startProcessing);
   $('cancelBtn').addEventListener('click', cancelProcessing);
   $('downloadAllBtn').addEventListener('click', downloadAll);
-  $('downloadHtmlBtn').addEventListener('click', downloadHtmlPage);
+  var _dh = $('downloadHtmlBtn'); if (_dh) _dh.addEventListener('click', downloadHtmlPage);
   // 全局指针事件：用于进度条拖动
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
@@ -837,14 +581,17 @@ function toggleTheme(e) {
   var current = document.documentElement.getAttribute('data-theme');
   var next = current === 'dark' ? 'light' : 'dark';
   localStorage.setItem('theme', next);
-  try {
-    if (document.startViewTransition) {
-      document.startViewTransition(function() { applyTheme(next); });
-    } else {
-      applyTheme(next);
+  var applied = false;
+  function doApply() { if (!applied) { applied = true; applyTheme(next); } }
+  if (document.startViewTransition) {
+    try {
+      var tr = document.startViewTransition(doApply);
+      if (tr && tr.finished && tr.finished.catch) tr.finished.catch(function() {});
+    } catch(err) {
+      doApply();
     }
-  } catch(e) {
-    applyTheme(next);
+  } else {
+    doApply();
   }
 }
 
@@ -881,9 +628,7 @@ function setupParams() {
 function setupLogToggle() {
   var box = $('logBox');
   var btn = $('logToggle');
-  var saved = null;
-  try { saved = localStorage.getItem('logOpen'); } catch(e) {}
-  var open = saved === '1';
+  var open = false;
   function apply() {
     box.classList.toggle('show', open);
     btn.classList.toggle('on', open);
@@ -939,6 +684,7 @@ function updateParam(id) {
   if (id === 'minSilence') valEl.textContent = el.value + ' ms';
   else if (id === 'silenceThresh') valEl.textContent = el.value + ' dB';
   else if (id === 'keepSilence') valEl.textContent = el.value + ' ms';
+  if (typeof fillSlider === 'function') fillSlider(el);
 }
 
 function handleFile(file) {
@@ -1690,9 +1436,9 @@ function drawWaveform(canvas, samples) {
   var mid = h / 2;
 
   var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  var waveColor = isDark ? '#0a84ff' : '#007aff';
-  var bgColor = isDark ? '#3a3a3c' : '#e8e8ea';
-  var centerColor = isDark ? '#48484a' : '#d2d2d7';
+  var waveColor = isDark ? '#4CC2FF' : '#0067C0';
+  var bgColor = isDark ? '#303030' : '#ECECEC';
+  var centerColor = isDark ? '#4A4A4A' : '#D9D9D9';
 
   var imageData = ctx.createImageData(w, h);
   var pixels = imageData.data;
@@ -1829,19 +1575,47 @@ function downloadAll() {
   }
 }
 
-function downloadHtmlPage() {
-  var doctype = '<!DOCTYPE html>\n';
-  var html = doctype + document.documentElement.outerHTML;
+function getInlineCss() {
+  var css = '';
+  try {
+    var sheets = document.styleSheets;
+    for (var i = 0; i < sheets.length; i++) {
+      try {
+        var rules = sheets[i].cssRules;
+        for (var j = 0; j < rules.length; j++) css += rules[j].cssText + '\n';
+      } catch(e) {}
+    }
+  } catch(e) {}
+  return css;
+}
+function saveHtmlFile(html, filename) {
   var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = '音频分割工具.html';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
-  addLog('离线版已下载', 'success');
+}
+function downloadHtmlPage() {
+  var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  function finish(css) {
+    if (css) html = html.replace(/<link rel="stylesheet" href="style\.css">/, '<style>\n' + css + '</style>');
+    saveHtmlFile(html, '音频分割工具.html');
+    addLog('离线版已下载', 'success');
+  }
+  if (window.fetch) {
+    try {
+      fetch('style.css', { cache: 'no-cache' })
+        .then(function(r) { if (!r.ok) throw new Error(); return r.text(); })
+        .then(function(css) { finish(css); })
+        .catch(function() { finish(getInlineCss()); });
+      return;
+    } catch(e) {}
+  }
+  finish(getInlineCss());
 }
 
 function downloadBlob(data, filename) {
@@ -1855,6 +1629,108 @@ function downloadBlob(data, filename) {
   setTimeout(function() { URL.revokeObjectURL(a.href); }, 60000);
   addLog('ZIP 包已下载: ' + filename + ' (' + formatSize(blob.size) + ')', 'success');
 }
+
+function fillSlider(el) {
+  var min = parseFloat(el.min) || 0;
+  var max = parseFloat(el.max) || 100;
+  var v = parseFloat(el.value) || 0;
+  el.style.setProperty('--fill', (max > min ? (v - min) / (max - min) * 100 : 0) + '%');
+}
+
+(function() {
+  var pane = $('navPane');
+  var toggleBtn = $('paneToggle');
+  var scrim = $('navScrim');
+  function isMobile() { return window.innerWidth <= 768; }
+  function saveState() {
+    try {
+      localStorage.setItem('navCollapsed', pane.classList.contains('collapsed') ? '1' : '0');
+      localStorage.setItem('navOpen', pane.classList.contains('open') ? '1' : '0');
+    } catch(e) {}
+  }
+  function setPane(open) {
+    if (isMobile()) {
+      pane.classList.toggle('open', open);
+      if (scrim) scrim.classList.toggle('show', open);
+    } else {
+      pane.classList.toggle('collapsed', !open);
+    }
+    saveState();
+  }
+  try {
+    if (isMobile()) {
+      if (localStorage.getItem('navOpen') === '1') { pane.classList.add('open'); if (scrim) scrim.classList.add('show'); }
+    } else if (localStorage.getItem('navCollapsed') === '1') {
+      pane.classList.add('collapsed');
+    }
+  } catch(e) {}
+  toggleBtn.addEventListener('click', function() {
+    setPane(isMobile() ? !pane.classList.contains('open') : pane.classList.contains('collapsed'));
+  });
+  if (scrim) scrim.addEventListener('click', function() { setPane(false); });
+  window.addEventListener('resize', function() {
+    if (!isMobile()) { pane.classList.remove('open'); if (scrim) scrim.classList.remove('show'); }
+  });
+
+  var dialog = $('helpDialog');
+  var aboutDialog = $('aboutDialog');
+  var navItems = document.querySelectorAll('.nav-item[data-action]');
+  function setActive(id) {
+    for (var i = 0; i < navItems.length; i++) {
+      navItems[i].classList.toggle('active', navItems[i].getAttribute('data-nav') === id);
+    }
+  }
+  for (var i = 0; i < navItems.length; i++) {
+    (function(n) {
+      n.addEventListener('click', function() {
+        var action = n.getAttribute('data-action');
+        if (action === 'help') {
+          if (dialog) dialog.classList.add('show');
+          setActive('help');
+        } else if (action === 'about') {
+          if (aboutDialog) aboutDialog.classList.add('show');
+          setActive('about');
+        } else if (action === 'download') {
+          if (typeof downloadHtmlPage === 'function') downloadHtmlPage();
+        } else if (action === 'home') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          setActive('home');
+        }
+      });
+    })(navItems[i]);
+  }
+  if ($('helpCloseBtn')) $('helpCloseBtn').addEventListener('click', function() { dialog.classList.remove('show'); setActive('home'); });
+  if (dialog) dialog.addEventListener('click', function(e) { if (e.target === dialog) { dialog.classList.remove('show'); setActive('home'); } });
+  if ($('aboutCloseBtn')) $('aboutCloseBtn').addEventListener('click', function() { aboutDialog.classList.remove('show'); setActive('home'); });
+  if (aboutDialog) aboutDialog.addEventListener('click', function(e) { if (e.target === aboutDialog) { aboutDialog.classList.remove('show'); setActive('home'); } });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (dialog && dialog.classList.contains('show')) { dialog.classList.remove('show'); setActive('home'); }
+      else if (aboutDialog && aboutDialog.classList.contains('show')) { aboutDialog.classList.remove('show'); setActive('home'); }
+    }
+  });
+
+  var sliders = document.querySelectorAll('.param input[type=range]');
+  for (var s = 0; s < sliders.length; s++) fillSlider(sliders[s]);
+
+  var ver = (typeof APP_VERSION_STR !== 'undefined') ? APP_VERSION_STR : '';
+  if ($('navAboutVer')) $('navAboutVer').textContent = ver;
+  if ($('aboutVer')) $('aboutVer').textContent = '版本 ' + ver;
+
+  document.addEventListener('click', function(e) {
+    var t = e.target;
+    var a = t && t.closest ? t.closest('a[href]') : null;
+    if (!a) return;
+    var href = a.getAttribute('href');
+    if (!href || !/\.html$/.test(href)) return;
+    if (a.target === '_blank') return;
+    e.preventDefault();
+    try { sessionStorage.setItem('navAnimate', '1'); } catch(err) {}
+    var c = document.querySelector('.container');
+    if (c) { c.style.transition = 'opacity 140ms ease'; c.style.opacity = '0'; }
+    setTimeout(function() { window.location.href = href; }, 140);
+  });
+})();
 </script>
 </body>
 </html>
